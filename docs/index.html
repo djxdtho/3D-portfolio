@@ -1,4 +1,4 @@
-﻿  <!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -7,12 +7,13 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-    iframe { position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-    .watermark-hide { position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; background: linear-gradient(to top, #000 0%, transparent 100%); z-index: 1; pointer-events: none; }
+    .wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; }
+    iframe { position: absolute; top: -50px; left: -50px; width: calc(100% + 100px); height: calc(100% + 100px); border: none; }
   </style>
 </head>
 <body>
-  <iframe src="https://my.spline.design/retrofuturismbganimation-Z2GBGul3o6yS1ji4oCoYO9rL/" title="3D Background"></iframe>
-  <div class="watermark-hide"></div>
+  <div class="wrapper">
+    <iframe src="https://my.spline.design/retrofuturismbganimation-Z2GBGul3o6yS1ji4oCoYO9rL/" title="3D Background"></iframe>
+  </div>
 </body>
 </html>
