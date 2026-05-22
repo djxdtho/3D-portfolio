@@ -39,7 +39,7 @@
 
   // Tunable parameters
   let ROTATION_SPEED = 0.5;
-  let GEAR_DETAIL = 1.0;
+  let GEAR_DETAIL = 2.0;
 
   var width, height, dpr, cx, cy;
   var HERO_CENTER_X = 0;
@@ -97,7 +97,7 @@
 
     // Module in px: determines tooth size. All gears share same module for correct meshing.
     // pitchRadius = (teeth * mod) / 2, so mod = 2 * pitchRadius / teeth
-    var mod = 4.2 * scale;
+    var mod = 5.0 * scale;
 
     // Define gears: [teeth, spokeStyle, meshWith (parent index)]
     // spokeStyle: 0=solid, 1=spoked, 2=cutout, 3=crossed
