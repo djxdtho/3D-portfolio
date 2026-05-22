@@ -7,15 +7,15 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; min-height: 100%; background: #0a0a0a; }
-  body { overflow-y: scroll; }
-  .canvas-wrap { position: fixed; right: 0; top: 0; width: 50vw; height: 100vh; overflow: hidden; pointer-events: none; z-index: 1; }
+  body { overflow: hidden; }
+  .canvas-wrap { position: fixed; inset: 0; width: 100vw; height: 100vh; overflow: hidden; pointer-events: none; z-index: 1; }
   .canvas-wrap canvas { display: block; width: 100%; height: 100%; filter: grayscale(1) contrast(1.1); }
   .spacer { height: 200vh; }
 </style>
 </head>
 <body>
 <div class="canvas-wrap"><canvas id="canvas"></canvas></div>
-<div class="spacer"></div>
+
 <script>
 (function () {
   var canvas = document.getElementById('canvas');
@@ -356,11 +356,7 @@ void main() {
     }
   });
 
-  // Scroll — move canvas down
-  window.addEventListener('scroll', function() {
-    var sy = window.scrollY;
-    wrap.style.transform = 'translateY(' + (sy * 0.5) + 'px)';
-  });
+
 })();
 </script>
 </body>
