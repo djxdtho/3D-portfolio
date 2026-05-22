@@ -1116,10 +1116,14 @@ document.addEventListener('click',e=>{
   document.body.appendChild(r);setTimeout(()=>r.remove(),800);
 });
 
-// ─── REVEAL OBSERVER ───
-document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale').forEach(el=>{
-  new IntersectionObserver(([e])=>{if(e.isIntersecting){e.target.classList.add('visible')}},{threshold:.1,rootMargin:'0px 0px -50px 0px'}).observe(el);
-});
+// ─── REVEAL HELPER ───
+function observeReveal(el){
+  if(!el)return;
+  if(el.classList.contains('visible'))return;
+  new IntersectionObserver(([e],obs)=>{
+    if(e.isIntersecting){e.target.classList.add('visible');obs.disconnect();}
+  },{threshold:.1,rootMargin:'0px 0px -50px 0px'}).observe(el);
+}
 
 // ─── SKELETON ───
 window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('skeleton').classList.add('hide');setTimeout(()=>document.getElementById('skeleton')?.remove(),600)},1400)});
@@ -1149,6 +1153,7 @@ skills.forEach(s=>{
   const c=document.createElement('div');c.className='skill-card reveal-scale';
   c.innerHTML=`<div class="icon">${s.icon}</div><div class="name">${s.name}</div><div class="level"><div class="level-bar"></div></div>`;
   sGrid.appendChild(c);
+  observeReveal(c);
   new IntersectionObserver(([e])=>{if(e.isIntersecting){c.querySelector('.level-bar').style.width=s.lvl+'%';}},{threshold:.5}).observe(c);
 });
 
@@ -1163,7 +1168,7 @@ const svGrid=document.getElementById('servicesGrid');
 services.forEach(s=>{
   const c=document.createElement('div');c.className='service-card reveal';
   c.innerHTML=`<div class="bg-image"></div><div class="overlay"></div><div class="service-icon">${s.icon}</div><h3>${s.title}</h3><p>${s.desc}</p>`;
-  svGrid.appendChild(c);
+  svGrid.appendChild(c);observeReveal(c);
 });
 
 // ─── PRICING ───
@@ -1183,24 +1188,32 @@ tiers.forEach(t=>{
   const c=document.createElement('div');
   c.className=`pricing-card reveal-scale${t.popular?' popular':''}`;
   c.innerHTML=`<div class="pricing-tier">${t.name}</div><div class="pricing-price">${t.price}</div><div class="pricing-duration">${t.dur}</div><div class="pricing-desc">${t.desc}</div><ul class="pricing-features">${t.ft.map(f=>`<li>${f}</li>`).join('')}</ul><a href="#contact" class="btn btn-sm${t.popular?'':' btn-outline'}"><span>Get Started${t.popular?' ★':''}</span></a>`;
-  pGrid.appendChild(c);
+  pGrid.appendChild(c);observeReveal(c);
 });
 
 // ─── PORTFOLIO ───
-const projects=[
-  {title:'FitTrack — Fitness App',desc:'Production-ready iOS fitness tracking app with AI coach, workout tracking, analytics, and exercise library.',tech:['Swift','SwiftUI','Firebase'],tag:'Mobile App',icon:'💪'},
-  {title:'KAY-FITS E-commerce',desc:'Modern e-commerce platform with shopping cart, checkout, product filters, and responsive design.',tech:['HTML','CSS','JavaScript'],tag:'E-commerce',icon:'🛍'},
-  {title:'Zari Restaurant Landing',desc:'Premium restaurant landing page with floating food animations, dark theme, menu, gallery, and reservation system.',tech:['React','Tailwind','Framer'],tag:'Landing Page',icon:'🍽'},
-  {title:'AA Elements Portfolio',desc:'Personal brand portfolio with interactive 3D elements, liquid glass UI, and gradient themes.',tech:['React','TypeScript','WebGL'],tag:'Portfolio',icon:'✦'},
-  {title:'3D Event Horizon',desc:'Black hole simulation using WebGL shaders with gravitational lensing and accretion disk effects.',tech:['WebGL','GLSL','Canvas'],tag:'Creative',icon:'🕳'},
-  {title:'Clockwork Mind',desc:'Canvas-based gear animation engine with particle systems and interactive controls.',tech:['Canvas 2D','JS','CSS'],tag:'Creative',icon:'⚙'},
-];
+const colors=['#ff6b35','#b5e853','#00d4ff','#ff9a8b','#e8f5ff','#f0b429'];
 const pfoGrid=document.getElementById('portfolioGrid');
-projects.forEach(p=>{
-  const item=document.createElement('div');item.className='portfolio-item reveal-scale';
-  item.innerHTML=`<div class="thumb"><div class="thumb-icon">${p.icon}</div></div><div class="tag">${p.tag}</div><div class="info"><h4>${p.title}</h4><p>${p.desc}</p><div class="tech">${p.tech.map(t=>`<span>${t}</span>`).join('')}</div></div>`;
+for(let i=0;i<6;i++){
+  const item=document.createElement('div');item.className='portfolio-item';
+  const tilt=Math.floor(Math.random()*6)-3;
+  item.style.transform=`rotate(${tilt}deg)`;
+  item.style.transition='transform .4s cubic-bezier(.22,1,.36,1),box-shadow .4s';
+  item.addEventListener('mouseenter',()=>{item.style.transform=`rotate(0deg) scale(1.03)`});
+  item.addEventListener('mouseleave',()=>{item.style.transform=`rotate(${tilt}deg)`});
+  item.innerHTML=`
+    <div class="thumb" style="background:linear-gradient(135deg,${colors[i%colors.length]}33,${colors[(i+1)%colors.length]}22);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px">
+      <div style="font-size:3rem;font-weight:800;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,${colors[i%colors.length]},${colors[(i+1)%colors.length]});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transform:rotate(-${tilt}deg);opacity:.8">CS</div>
+      <div style="font-size:1.6rem;opacity:.2">✦</div>
+    </div>
+    <div class="tag" style="font-family:'Space Grotesk',sans-serif;font-weight:700;background:${colors[i%colors.length]}22;border-color:${colors[i%colors.length]}44;color:${colors[i%colors.length]}">Coming Soon</div>
+    <div class="info" style="align-items:center;justify-content:center;text-align:center;background:linear-gradient(to top,rgba(0,0,0,.95) 20%,rgba(0,0,0,.3) 70%)">
+      <h4 style="font-size:1.4rem;font-family:'Space Grotesk',sans-serif;transform:rotate(-2deg)">✦ Coming Soon ✦</h4>
+      <p style="font-size:.85rem;transform:rotate(1deg)">Something exciting is brewing</p>
+    </div>`;
   pfoGrid.appendChild(item);
-});
+  observeReveal(item);
+}
 
 // ─── TESTIMONIALS ───
 const testimonials=[
@@ -1212,7 +1225,7 @@ const tGrid=document.getElementById('testimonialGrid');
 testimonials.forEach(t=>{
   const c=document.createElement('div');c.className='testimonial-card reveal';
   c.innerHTML=`<div class="stars">${t.s}</div><blockquote>"${t.q}"</blockquote><div class="author">${t.a}</div><div class="role">${t.r}</div>`;
-  tGrid.appendChild(c);
+  tGrid.appendChild(c);observeReveal(c);
 });
 
 // ─── FAQ ACCORDION ───
@@ -1239,6 +1252,9 @@ document.getElementById('contactForm').addEventListener('submit',function(e){
   btn.innerHTML='<span>✓ Message Sent!</span>';btn.style.pointerEvents='none';
   setTimeout(()=>{btn.innerHTML='<span>Send Message →</span>';btn.style.pointerEvents='auto';this.reset();},3000);
 });
+
+// ─── OBSERVE STATIC REVEAL ELEMENTS ───
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale').forEach(el=>observeReveal(el));
 
 // ─── INIT ───
 applyTheme(0);
