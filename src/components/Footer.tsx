@@ -20,7 +20,7 @@ export default function Footer() {
   return (
     <footer
       className="border-t"
-      style={{ background: '#06060a', borderColor: 'rgba(255,255,255,0.06)' }}
+      style={{ background: 'transparent', borderColor: 'rgba(255,255,255,0.06)' }}
     >
       <div className="max-w-6xl mx-auto px-6 py-14">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-12">

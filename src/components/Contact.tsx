@@ -65,7 +65,7 @@ export default function Contact() {
   };
 
   return (
-    <section id="contact" className="py-28 px-6" style={{ background: '#08080c' }}>
+    <section id="contact" className="py-28 px-6" style={{ background: 'transparent' }}>
       <div className="max-w-6xl mx-auto">
         <div
           ref={ref}

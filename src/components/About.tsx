@@ -32,7 +32,7 @@ export default function About() {
   const { ref, visible } = useScrollAnimation();
 
   return (
-    <section id="about" className="py-28 px-6" style={{ background: '#08080c' }}>
+    <section id="about" className="py-28 px-6" style={{ background: 'transparent' }}>
       <div className="max-w-6xl mx-auto">
         <div
           ref={ref}

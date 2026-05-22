@@ -14,7 +14,7 @@ export default function Skills() {
     <section
       id="skills"
       className="py-28 px-6"
-      style={{ background: 'linear-gradient(180deg, #0d1117 0%, #08080c 100%)' }}
+      style={{ background: 'transparent' }}
     >
       <div className="max-w-6xl mx-auto">
         <div

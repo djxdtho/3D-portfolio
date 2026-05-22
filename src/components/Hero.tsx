@@ -21,7 +21,7 @@ export default function Hero() {
   return (
     <section
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{ background: 'linear-gradient(160deg, #08080c 0%, #0d1117 50%, #080810 100%)' }}
+      style={{ background: 'transparent' }}
     >
       <GridPattern />
 
