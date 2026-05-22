@@ -3,23 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Portfolio</title>
+<title>Event Horizon</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; min-height: 100%; background: #0a0a0a; }
-  body { overflow: hidden; }
-  .canvas-wrap { position: fixed; inset: 0; width: 100vw; height: 100vh; overflow: hidden; pointer-events: none; z-index: 1; }
-  .canvas-wrap canvas { display: block; width: 100%; height: 100%; filter: grayscale(1) contrast(1.1); }
-  .spacer { height: 200vh; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .label {
+    position: fixed;
+    top: 20px;
+    left: 24px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(200, 149, 108, 0.5);
+    z-index: 10;
+    pointer-events: none;
+    user-select: none;
+  }
 </style>
 </head>
 <body>
-<div class="canvas-wrap"><canvas id="canvas"></canvas></div>
-
+<div class="label">Event Horizon</div>
+<canvas id="canvas"></canvas>
 <script>
+// ─────────────────────────────────────────────
+// Event Horizon — Original Schwarzschild black hole
+// Verlet geodesic integration, Novikov-Thorne disk, Doppler beaming
+// ─────────────────────────────────────────────
 (function () {
   var canvas = document.getElementById('canvas');
-  var wrap = canvas.parentElement;
   var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var gl = canvas.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: false });
@@ -43,19 +56,26 @@ uniform vec2 u_bhCenter;
 uniform float u_bhScale;
 uniform float u_chromatic;
 
+// ──── Constants ────
 const float PI = 3.14159265359;
 const float TAU = 6.28318530718;
-const float RS = 1.0;
-const float ISCO = 3.0;
-const float DISK_IN = 2.2;
-const float DISK_OUT = 14.0;
+const float RS = 1.0;        // Schwarzschild radius
+const float ISCO = 3.0;      // Innermost stable circular orbit
+const float DISK_IN = 2.2;   // Inner glow edge (infalling material)
+const float DISK_OUT = 14.0;  // Outer disk edge
 
+// ──────────────────────────────────────────
+// Hash — PCG-inspired, no sin()
+// ──────────────────────────────────────────
 float hash(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);
     p3 += dot(p3, p3.yzx + 33.33);
     return fract((p3.x + p3.y) * p3.z);
 }
 
+// ──────────────────────────────────────────
+// Gradient noise with quintic interpolation
+// ──────────────────────────────────────────
 float gNoise(vec2 p) {
     vec2 i = floor(p), f = fract(p);
     vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
@@ -66,9 +86,12 @@ float gNoise(vec2 p) {
     );
 }
 
+// ──────────────────────────────────────────
+// FBM with domain rotation (reduces grid artifacts)
+// ──────────────────────────────────────────
 float fbm(vec2 p) {
     float v = 0.0, a = 0.5;
-    mat2 rot = mat2(0.866, 0.5, -0.5, 0.866);
+    mat2 rot = mat2(0.866, 0.5, -0.5, 0.866); // 30 deg rotation
     for (int i = 0; i < 4; i++) {
         v += a * gNoise(p);
         p = rot * p * 2.03 + vec2(47.0, 13.0);
@@ -76,189 +99,351 @@ float fbm(vec2 p) {
     }
     return v;
 }
+// Lightweight 2-octave noise for subtle effects (nebula etc.)
+float fbmLite(vec2 p) {
+    float v = 0.5 * gNoise(p);
+    p = mat2(0.866, 0.5, -0.5, 0.866) * p * 2.03 + vec2(47.0, 13.0);
+    v += 0.25 * gNoise(p);
+    return v;
+}
 
-vec3 starField(vec2 uv, float time) {
+// ──────────────────────────────────────────
+// Star field — cell-based with spherical UV
+// ──────────────────────────────────────────
+vec3 starField(vec3 rd) {
+    float u = atan(rd.z, rd.x) / TAU + 0.5;
+    float v = asin(clamp(rd.y, -0.999, 0.999)) / PI + 0.5;
     vec3 col = vec3(0.0);
-    vec2 suv = uv * 120.0;
-    vec2 si = floor(suv); vec2 sf = fract(suv);
-    float sh = hash(si);
-    float br = sh * 0.6 + 0.4;
-    float twinkle = 0.5 + 0.5 * sin(time * (2.0 + sh * 5.0) + sh * 100.0);
-    float d = length(sf - 0.5);
-    float star = smoothstep(0.08, 0.0, d) * br * (0.6 + 0.4 * twinkle);
-    col += star * vec3(1.0);
 
-    vec3 satCol = vec3(0.0);
-    for (int s = 0; s < 5; s++) {
-        float fi = float(s);
-        vec2 sv = uv * (200.0 + fi * 60.0);
-        vec2 svi = floor(sv); vec2 svf = fract(sv);
-        float sh2 = hash(svi + fi * 73.0);
-        float tw2 = 0.5 + 0.5 * sin(time * (1.5 + sh2 * 4.0) + sh2 * 200.0 + fi);
-        float d2 = length(svf - 0.5);
-        float s2 = smoothstep(0.06, 0.0, d2) * sh2 * (0.5 + 0.5 * tw2);
-        vec3 tint = 0.5 + 0.5 * cos(vec3(0.0, 1.0, 2.0) + sh2 * 6.0 + fi * 1.5);
-        satCol += s2 * tint * 0.25;
+    // Bright sparse stars
+    {
+        vec2 cell = floor(vec2(u, v) * 55.0);
+        vec2 f = fract(vec2(u, v) * 55.0);
+        vec2 r = vec2(hash(cell), hash(cell + 127.1));
+        float d = length(f - r);
+        float b = pow(r.x, 10.0) * exp(-d * d * 500.0);
+        col += mix(vec3(1.0, 0.65, 0.35), vec3(0.55, 0.75, 1.0), r.y) * b * 4.0;
     }
-    col += satCol;
+    // Medium density stars
+    {
+        vec2 cell = floor(vec2(u, v) * 170.0);
+        vec2 f = fract(vec2(u, v) * 170.0);
+        vec2 r = vec2(hash(cell + 43.0), hash(cell + 91.0));
+        float d = length(f - r);
+        float b = pow(r.x, 18.0) * exp(-d * d * 1000.0);
+        col += vec3(0.85, 0.88, 1.0) * b * 2.0;
+    }
+    // Subtle nebula (lite noise — pow(3) crushes detail anyway)
+    float n = fbmLite(vec2(u, v) * 3.0) * fbmLite(vec2(u, v) * 5.5 + 10.0);
+    col += vec3(0.10, 0.04, 0.14) * pow(n, 3.0);
 
-    float md = length(uv);
-    col *= smoothstep(1.2, 0.3, md);
     return col;
 }
 
-vec2 schwarzschild(vec2 p, float rS) {
-    float r = length(p);
-    float factor = 1.0 / (1.0 - rS / max(r, 0.01));
-    return p * factor;
+// ──────────────────────────────────────────
+// Blackbody color (physically motivated)
+// ──────────────────────────────────────────
+vec3 bbColor(float t) {
+    t = clamp(t, 0.0, 2.5);
+    vec3 lo = vec3(1.0, 0.18, 0.0);    // deep red     (~1500K)
+    vec3 mi = vec3(1.0, 0.55, 0.12);   // orange       (~3500K)
+    vec3 hi = vec3(1.0, 0.93, 0.82);   // warm white   (~8000K)
+    vec3 hot = vec3(0.65, 0.82, 1.0);  // cool blue-wh (~15000K)
+    vec3 c = mix(lo, mi, smoothstep(0.0, 0.3, t));
+    c = mix(c, hi, smoothstep(0.3, 0.8, t));
+    return mix(c, hot, smoothstep(0.8, 1.8, t));
 }
 
-vec3 accretionDisk(float r, float phi, float time, float intensity) {
-    float innerGlow = smoothstep(DISK_IN - 0.5, DISK_IN, r);
-    float outerFade = smoothstep(DISK_OUT + 1.0, DISK_OUT - 1.0, r);
-    float diskShape = innerGlow * outerFade;
+// ──────────────────────────────────────────
+// Accretion disk shading
+//   Novikov-Thorne temperature profile
+//   FBM turbulence + spiral arms
+//   Doppler beaming + gravitational redshift
+// ──────────────────────────────────────────
+vec4 shadeDisk(vec3 hit, vec3 vel, float time) {
+    float r = length(hit.xz);
+    if (r < DISK_IN * 0.5 || r > DISK_OUT * 1.05) return vec4(0.0);
 
-    float temp = 8000.0 * pow(r / ISCO, -0.75);
-    vec3 color;
-    if (temp > 6000.0) {
-        float t2 = (temp - 6000.0) / 2000.0;
-        color = mix(vec3(1.0, 0.85, 0.6), vec3(1.0, 0.95, 0.85), t2);
-    } else if (temp > 4000.0) {
-        float t2 = (temp - 4000.0) / 2000.0;
-        color = mix(vec3(0.9, 0.5, 0.2), vec3(1.0, 0.85, 0.6), t2);
-    } else {
-        color = vec3(0.7, 0.25, 0.05);
+    // Novikov-Thorne: T proportional to r^-3/4 (1 - sqrt(r_isco/r))^1/4
+    float xr = ISCO / r;
+    float tProfile = pow(ISCO / r, 0.75) * pow(max(0.001, 1.0 - sqrt(xr)), 0.25);
+
+    // Gravitational redshift: observed temp = emitted * sqrt(1 - RS/r)
+    float gRedshift = sqrt(max(0.01, 1.0 - RS / r));
+    tProfile *= gRedshift;
+
+    // Disk texture with Keplerian differential rotation
+    float phi = atan(hit.z, hit.x);
+    float lr = log2(max(r, 0.1));
+
+    // Keplerian angular velocity with a floor so outer disk still moves
+    float keplerOmega = sqrt(0.5 * RS / (r * r * r));
+    float baseOmega = 0.04; // minimum rotation for outer rings
+    float omega = max(keplerOmega, baseOmega) * 10.0;
+    float rotAngle = time * omega;
+    float ca = cos(rotAngle), sa = sin(rotAngle);
+    vec2 rotXZ = vec2(hit.x * ca - hit.z * sa, hit.x * sa + hit.z * ca);
+
+    // FBM turbulence — the primary texture, gives cloudy organic feel
+    // Sampled at Keplerian-rotated coords for orbital flow
+    float turb = fbm(rotXZ * 1.2 + vec2(lr * 3.0));
+    turb = 0.25 + 0.75 * turb;
+
+    // Time-evolving detail layer — single noise call (subtle contribution)
+    float timeShift = time * 0.15;
+    float detail = gNoise(rotXZ * 3.5 + vec2(100.0 + timeShift, timeShift * 0.7));
+    turb *= 0.7 + 0.3 * detail;
+
+    // Concentric ring modulation — visible structure within the clouds
+    float ringPhase1 = sin(r * 10.0 + rotAngle * r * 0.3) * 0.5 + 0.5;
+    float ringPhase2 = sin(r * 20.0 - rotAngle * r * 0.15) * 0.5 + 0.5;
+    float rings = ringPhase1 * 0.55 + ringPhase2 * 0.45;
+    rings = 0.5 + 0.5 * rings;
+    turb *= rings;
+
+    // Doppler beaming from Keplerian orbital motion
+    // Reduced from 3.0 to 2.0 so the receding side stays visible
+    float orbSpeed = sqrt(0.5 * RS / max(r, DISK_IN));
+    vec3 orbDir = normalize(vec3(-hit.z, 0.0, hit.x));
+    float dopplerFactor = 1.0 + 2.0 * dot(normalize(vel), orbDir) * orbSpeed;
+    dopplerFactor = max(0.15, dopplerFactor);
+    float dopplerBoost = dopplerFactor * dopplerFactor * dopplerFactor;
+
+    // Intensity
+    float I = tProfile * turb * 6.0;
+
+    // Edge fades
+    float innerFade = smoothstep(DISK_IN * 0.7, DISK_IN * 1.2, r);
+    // ISCO fade — emission ramps up beyond ISCO
+    float iscoFade = 0.35 + 0.65 * smoothstep(ISCO * 0.85, ISCO * 1.2, r);
+    float outerFade = 1.0 - smoothstep(DISK_OUT * 0.55, DISK_OUT, r);
+    I *= innerFade * iscoFade * outerFade;
+
+    // Color: temperature + Doppler frequency shift
+    // Approaching side: blue-shifted (higher temp), receding: red-shifted (lower temp)
+    float colorTemp = tProfile * pow(dopplerFactor, 1.8) * 1.2;
+    vec3 col = bbColor(colorTemp) * I * dopplerBoost;
+
+    // Chromatic dispersion: each ring band gets a spectral hue
+    if (u_chromatic > 0.01) {
+        // Smooth spectral mapping based on radius
+        // Uses the actual ring structure phase for band-coherent coloring
+        float spectralR = (r - DISK_IN) / (DISK_OUT - DISK_IN);
+        float ringP = ringPhase1; // from the ring structure above
+
+        // Combine radial position and ring phase for spectral position
+        // This ensures each bright ring band has its own distinct hue
+        float hue = spectralR * 0.8 + ringP * 0.4;
+
+        // Full visible spectrum: red → orange → yellow → green → cyan → blue
+        vec3 spectrum;
+        // Red channel: strong at low hue, returns at high hue (wraps around)
+        spectrum.r = (1.0 - smoothstep(0.0, 0.35, hue))  // red at start
+                   + smoothstep(0.25, 0.45, hue) * (1.0 - smoothstep(0.55, 0.7, hue)) * 0.7  // orange/yellow
+                   + smoothstep(0.85, 1.1, hue) * 0.4; // faint return
+        // Green channel: broad peak in the middle (yellow → green → cyan)
+        spectrum.g = smoothstep(0.15, 0.4, hue) * (1.0 - smoothstep(0.7, 0.95, hue));
+        // Blue channel: peaks at high hue (cyan → blue)
+        spectrum.b = smoothstep(0.5, 0.8, hue)
+                   + smoothstep(0.85, 1.1, hue) * 0.3; // violet hint
+        spectrum = max(spectrum, 0.05);
+
+        // Preserve luminance from the original color
+        float luma = dot(col, vec3(0.3, 0.5, 0.2));
+        vec3 chromaCol = spectrum * luma * 2.0;
+
+        col = mix(col, chromaCol, u_chromatic * 0.75);
     }
 
-    float spiral = sin(phi * 3.0 + r * 2.0 - time * 0.5) * 0.5 + 0.5;
-    float pattern = 0.7 + 0.3 * spiral;
-    float noiseR = fbm(vec2(r * 3.0, phi * 2.0) + time * 0.05);
-    pattern *= 0.8 + 0.2 * noiseR;
-
-    float doppler = 1.0 + 0.3 * sin(phi - time * 0.3) * smoothstep(DISK_IN, DISK_IN + 3.0, r);
-
-    color *= pattern * doppler * intensity;
-    color *= outerFade;
-    return color;
+    float alpha = clamp(I * 1.3, 0.0, 0.96);
+    return vec4(col, alpha);
 }
 
+// ──────────────────────────────────────────
+// Main — Schwarzschild geodesic ray tracer
+// Uses velocity-Verlet integration of:
+//   d²x/dλ² = -1.5 · RS · L² / r⁵ · x
+// where L² = |x × v|² is the conserved angular momentum
+// ──────────────────────────────────────────
 void main() {
-    vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / min(u_res.x, u_res.y);
-    uv += u_bhCenter;
+    vec2 fc = gl_FragCoord.xy;
+    vec2 ctr = (u_bhScale > 0.0 ? u_bhCenter : vec2(0.5)) * u_res;
+    float sc = u_bhScale > 0.0 ? u_bhScale : 1.0;
+    vec2 uv = (fc - ctr) * sc / u_res.x;
 
-    vec3 col = vec3(0.0);
+    // Orbital camera
+    float camR = 28.0;
+    float orbit = u_time * 0.055 * u_rotationSpeed;
+    float tilt = 0.25 + u_tilt;
 
-    float time = u_time;
+    vec3 eye = vec3(
+        camR * cos(orbit) * cos(tilt),
+        camR * sin(tilt),
+        camR * sin(orbit) * cos(tilt)
+    );
 
-    float tilt = u_tilt;
-    float rot = u_rotate;
-    float ca = cos(rot), sa = sin(rot);
-    uv = mat2(ca, -sa, sa, ca) * uv;
-    float ct = cos(tilt);
-    uv.y /= max(ct, 0.01);
+    // Look-at basis
+    vec3 fwd = normalize(-eye);
+    vec3 rt = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+    vec3 up = cross(rt, fwd);
 
-    float r = length(uv);
-    float phi = atan(uv.y, uv.x);
+    // Roll rotation
+    float cr = cos(u_rotate), sr = sin(u_rotate);
+    vec3 rr = cr * rt + sr * up;
+    vec3 ru = -sr * rt + cr * up;
 
-    float scale = u_bhScale > 0.01 ? u_bhScale : 1.0;
-    if (u_bhScale < 0.01) scale = 1.5 * (1.0 + 0.5 * sin(time * 0.1));
+    vec3 rd = normalize(fwd + uv.x * rr + uv.y * ru);
 
-    vec2 bhUv = uv * scale;
-    float bhR = length(bhUv);
+    // Stars-only bypass
+    if (u_starsOnly > 0.5) {
+        vec3 s = starField(rd);
+        gl_FragColor = vec4(pow(s, vec3(0.45)), 1.0);
+        return;
+    }
 
-    vec2 lensed = bhUv;
-    float deflection = 1.0 / max(bhR, 0.05);
-    lensed = bhUv * (1.0 + 0.25 * deflection);
+    // ──── Geodesic integration ────
+    vec3 pos = eye;
+    vec3 vel = rd;
 
-    vec3 stars = starField(lensed * (0.5 + 0.5 * (1.0 - 1.0 / (1.0 + bhR * 0.3))), time);
-    col += stars;
+    // Angular momentum (conserved along Schwarzschild geodesic)
+    vec3 Lvec = cross(pos, vel);
+    float L2 = dot(Lvec, Lvec);
 
-    vec3 diskCol = vec3(0.0);
-    if (bhR > DISK_IN * 0.4 && bhR < DISK_OUT * 1.5) {
-        float diskR = bhR;
-        float diskPhi = phi + time * 0.05 * u_rotationSpeed;
-        float ringPattern = 0.0;
-        for (int ri = 0; ri < 4; ri++) {
-            float rf = float(ri);
-            float ringR = DISK_IN + 2.0 + rf * 2.5;
-            float ringWidth = 1.2;
-            float ring = exp(-0.5 * pow((diskR - ringR) / ringWidth, 2.0));
-            ringPattern += ring * (0.3 + 0.7 * (0.5 + 0.5 * sin(diskPhi * 2.0 + rf * 3.0)));
+    vec4 diskAccum = vec4(0.0);
+    vec3 glow = vec3(0.0);
+    bool absorbed = false;
+    int diskCrossings = 0;
+    float minR = 1000.0; // track closest approach for photon ring
+
+    // Pre-compute loop invariant
+    float gravCoeff = -1.5 * RS * L2;
+
+    for (int i = 0; i < 200; i++) {
+        float r = length(pos);
+
+        // Adaptive step: fine near BH, coarse far away
+        float h = 0.16 * clamp(r - 0.4 * RS, 0.06, 3.5);
+
+        // Schwarzschild geodesic: a = -1.5·RS·L²/r⁵ · x
+        float invR2 = 1.0 / (r * r);
+        float invR5 = invR2 * invR2 / r;
+        vec3 acc = (gravCoeff * invR5) * pos;
+
+        // Velocity-Verlet integration (symplectic, energy-preserving)
+        vec3 p1 = pos + vel * h + 0.5 * acc * h * h;
+        float r1 = length(p1);
+        float invR12 = 1.0 / (r1 * r1);
+        float invR15 = invR12 * invR12 / r1;
+        vec3 acc1 = (gravCoeff * invR15) * p1;
+        vec3 v1 = vel + 0.5 * (acc + acc1) * h;
+
+        // Track closest approach
+        minR = min(minR, r1);
+
+        // ── Disk crossing detection (y=0 plane) ──
+        if (pos.y * p1.y < 0.0 && diskAccum.a < 0.97) {
+            float t = pos.y / (pos.y - p1.y);
+            vec3 hit = mix(pos, p1, t);
+            vec4 dc = shadeDisk(hit, vel, u_time * u_rotationSpeed);
+            dc.rgb *= u_diskIntensity;
+            // 1st & 2nd crossings: full (primary disk + secondary image)
+            // 3rd+ crossings: heavily attenuated (these create the crispy 1px photon ring)
+            if (diskCrossings >= 2) {
+                dc.rgb *= 0.15;
+                dc.a *= 0.15;
+            }
+            // Alpha-over compositing
+            diskAccum.rgb += dc.rgb * dc.a * (1.0 - diskAccum.a);
+            diskAccum.a += dc.a * (1.0 - diskAccum.a);
+            // Bloom spillover: bright disk regions bleed glow
+            float diskBright = dot(dc.rgb, vec3(0.3, 0.5, 0.2)) * dc.a;
+            glow += dc.rgb * 0.04 * max(diskBright - 0.3, 0.0);
+            diskCrossings++;
         }
-        diskCol = accretionDisk(diskR, diskPhi, time, u_diskIntensity);
-        diskCol *= 1.0 + 0.3 * ringPattern;
+
+        // ── Glow calculations only when close to BH (negligible contribution beyond r=6) ──
+        if (r1 < 6.0) {
+            // Soft ambient glow near BH (very diffuse, no sharp peak)
+            float pDist = abs(r1 - 1.5 * RS);
+            float psGlow = 1.0 / (1.0 + pDist * pDist * 20.0) * h * 0.001 / max(r1 * r1, 0.2);
+            glow += vec3(0.8, 0.6, 0.35) * psGlow;
+
+            // Event horizon proximity glow
+            float hzGlow = exp(-(r1 - RS) * 3.5) * h * 0.003;
+            glow += vec3(0.5, 0.25, 0.08) * max(hzGlow, 0.0);
+        }
+
+        // ── Termination ──
+        if (r1 < RS * 0.35) { absorbed = true; break; }
+        // Early escape: ray moving outward past disk range, deflection negligible
+        if (r1 > 25.0 && r1 > r) break;
+        if (r1 > 55.0) break;
+
+        pos = p1;
+        vel = v1;
     }
 
-    float shadow = 1.0 - smoothstep(0.8, 3.0, bhR);
-    diskCol *= 1.0 - shadow * 0.7;
-
-    col = mix(col, diskCol, 0.7 * (1.0 - starsOnly));
-
-    if (bhR < RS * 1.02) {
-        col = vec3(0.0);
+    // ──── Final compositing ────
+    vec3 col = vec3(0.0);
+    if (!absorbed) {
+        col = starField(normalize(vel));
     }
+    // Disk over background
+    col = col * (1.0 - diskAccum.a) + diskAccum.rgb;
 
-    float ev = 1.0 / max(bhR, RS);
-    float blueShift = 1.0 + 0.15 * ev;
-    col *= blueShift;
+    // ── Shadow-edge chromatic fringe ──
+    // Replaces the old sharp 1px ring with smooth, wide RGB separation
+    float ringDist = abs(minR - 1.5 * RS);
+    float chromo = u_chromatic;
 
-    float phiLens = atan(lensed.y, lensed.x);
-    float lensFlare = 0.0;
-    for (int fl = 0; fl < 3; fl++) {
-        float flf = float(fl);
-        float flAng = phiLens + flf * 2.2 + time * (0.1 + flf * 0.05);
-        vec2 flDir = vec2(cos(flAng), sin(flAng));
-        float flProj = dot(normalize(lensed), flDir);
-        float fl = max(0.0, flProj) * exp(-bhR * 0.5);
-        lensFlare += fl * (0.08 - flf * 0.02);
-    }
-    col += vec3(1.0, 0.85, 0.6) * lensFlare * (1.0 - starsOnly);
+    // Soft wide chromatic bands: red/orange outside, blue inside
+    // No center "white ring" — purely spectral separation
+    float baseChroma = 0.1 + 0.5 * chromo;
+    float spread = 0.08 + 0.18 * chromo;
+    float falloff = 20.0 + 15.0 * (1.0 - chromo); // wider/softer bands
+    float rRing = exp(-(ringDist + spread) * (ringDist + spread) * falloff);
+    float bRing = exp(-(ringDist - spread) * (ringDist - spread) * falloff);
+    col.r += rRing * 0.3 * baseChroma;
+    col.b += bRing * 0.35 * baseChroma;
 
-    float vignette = 1.0 - 0.35 * length(uv);
-    col *= vignette;
+    // Glow additive
+    col += glow;
 
-    col = clamp(col, 0.0, 1.0);
-    col = pow(col, vec3(1.0 / 2.2));
+    // Filmic tone mapping (ACES-inspired) + contrast
+    col *= 1.4;
+    vec3 a = col * (col + 0.0245786) - 0.000090537;
+    vec3 b = col * (0.983729 * col + 0.4329510) + 0.238081;
+    col = a / b;
 
-    float chroma = u_chromatic;
-    if (chroma > 0.01) {
-        float cx = 0.005 * chroma;
-        vec2 cuv = (gl_FragCoord.xy - 0.5 * u_res) / min(u_res.x, u_res.y);
-        float cr = length(cuv);
-        float cShift = 0.001 * chroma * cr;
-        col.r = texture2D(gl_FragCoord.xy / u_res + vec2(cShift, 0.0)).r;
-        col.b = texture2D(gl_FragCoord.xy / u_res - vec2(cShift, 0.0)).b;
-    }
+    col = smoothstep(0.0, 1.0, col);
+    col = pow(max(col, 0.0), vec3(0.92));
 
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }
 `;
 
-  function compileShader(src, type) {
+  function compile(type, src) {
     var s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-      console.error(gl.getShaderInfoLog(s));
-      gl.deleteShader(s);
-      return null;
+      console.error('Shader compile error:', gl.getShaderInfoLog(s));
     }
     return s;
   }
 
-  var vs = compileShader(vertSrc, gl.VERTEX_SHADER);
-  var fs = compileShader(fragSrc, gl.FRAGMENT_SHADER);
-  if (!vs || !fs) return;
   var prog = gl.createProgram();
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vertSrc));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fragSrc));
   gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(prog)); return; }
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error('Program link error:', gl.getProgramInfoLog(prog));
+  }
   gl.useProgram(prog);
 
   var buf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,3,-1,-1,3]), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
   var aPos = gl.getAttribLocation(prog, 'a_pos');
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
@@ -284,13 +469,30 @@ void main() {
   var bhScaleVal = 0.0;
   var chromaticVal = 0.0;
 
-  // Mouse follow — black hole moves toward cursor
-  var mouseX = 0.0, mouseY = 0.0;
+  // Mouse drag to control viewing angle
+  var mouseDown = false;
+  var lastMX = 0, lastMY = 0;
+  canvas.addEventListener('mousedown', function(e) { mouseDown = true; lastMX = e.clientX; lastMY = e.clientY; });
   canvas.addEventListener('mousemove', function(e) {
-    var rect = canvas.getBoundingClientRect();
-    mouseX = (e.clientX - rect.left) / rect.width * 2.0 - 1.0;
-    mouseY = (e.clientY - rect.top) / rect.height * 2.0 - 1.0;
+    if (mouseDown) {
+      tiltVal += (e.clientY - lastMY) * 0.003;
+      rotateVal += (e.clientX - lastMX) * 0.003;
+      tiltVal = Math.max(-0.8, Math.min(0.8, tiltVal));
+      lastMX = e.clientX; lastMY = e.clientY;
+    }
   });
+  canvas.addEventListener('mouseup', function() { mouseDown = false; });
+  canvas.addEventListener('touchstart', function(e) { e.preventDefault(); mouseDown = true; lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY; }, { passive: false });
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (mouseDown) {
+      tiltVal += (e.touches[0].clientY - lastMY) * 0.003;
+      rotateVal += (e.touches[0].clientX - lastMX) * 0.003;
+      tiltVal = Math.max(-0.8, Math.min(0.8, tiltVal));
+      lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchend', function() { mouseDown = false; });
 
   var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   var needsResize = true;
@@ -312,11 +514,6 @@ void main() {
     if (!running) return;
     if (needsResize) resize();
     var t = prefersReduced ? 0.0 : now * 0.001;
-
-    // Smooth mouse follow for black hole position
-    bhCenterX += (mouseX * 0.5 - bhCenterX) * 0.05;
-    bhCenterY += (-mouseY * 0.5 - bhCenterY) * 0.05;
-
     gl.uniform1f(uTime, t);
     gl.uniform1f(uRotationSpeed, rotationSpeedVal);
     gl.uniform1f(uDiskIntensity, diskIntensityVal);
@@ -330,14 +527,21 @@ void main() {
     requestAnimationFrame(render);
   }
 
-  window.addEventListener('resize', function () { needsResize = true; });
+  window.addEventListener('resize', function () {
+    needsResize = true;
+  });
 
   resize();
+
   requestAnimationFrame(render);
 
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) { running = false; }
-    else { running = true; requestAnimationFrame(render); }
+    if (document.hidden) {
+      running = false;
+    } else {
+      running = true;
+      requestAnimationFrame(render);
+    }
   });
 
   window.addEventListener('message', function(e) {
@@ -355,9 +559,8 @@ void main() {
       }
     }
   });
-
-
 })();
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"216c03e5eb1b42998a91f716785010f9","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
