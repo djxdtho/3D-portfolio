@@ -39,7 +39,7 @@
 
   // Tunable parameters
   let ROTATION_SPEED = 0.5;
-  let GEAR_DETAIL = 2.0;
+  let GEAR_DETAIL = 4.0;
 
   var width, height, dpr, cx, cy;
   var HERO_CENTER_X = 0;
@@ -647,7 +647,7 @@
 
     // Decorative screws/dots on hub
     if (hubR > 5 * scale) {
-      var numDots = 3;
+      var numDots = 6;
       var dotDist = hubR * 0.95;
       var dotR2 = Math.max(1, hubR * 0.15);
       for (var d = 0; d < numDots; d++) {
@@ -709,7 +709,7 @@
 
   // ── Floating dust/spark particles ──
   var particles = [];
-  var NUM_PARTICLES = 30;
+  var NUM_PARTICLES = 80;
 
   function initParticles() {
     particles = [];
