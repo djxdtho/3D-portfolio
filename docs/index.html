@@ -7,822 +7,543 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; }
-  canvas { display: block; width: 50vw; height: 100vh; margin-left: auto; filter: grayscale(1) contrast(1.1); }
+  canvas { display: block; width: 100vw; height: 100vh; }
   .label { display: none; }
 </style>
 </head>
 <body>
-<div class="label">Clockwork Mind</div>
+<div class="label">Event Horizon</div>
 <canvas id="canvas"></canvas>
 <script>
 // ─────────────────────────────────────────────
-// 32 · Clockwork Mind — Interlocking precision gears
+// Event Horizon — Original Schwarzschild black hole
+// Verlet geodesic integration, Novikov-Thorne disk, Doppler beaming
 // ─────────────────────────────────────────────
-(function() {
+(function () {
   var canvas = document.getElementById('canvas');
-  var ctx = canvas.getContext('2d');
   var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var _pad = parseFloat(new URLSearchParams(location.search).get('p')) || 1;
+  var gl = canvas.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: false });
+  if (!gl) return;
 
-  // Tunable parameters
-  let ROTATION_SPEED = 0.5;
-  let GEAR_DETAIL = 4.0;
+  var vertSrc = [
+    'attribute vec2 a_pos;',
+    'void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }'
+  ].join('\n');
 
-  var width, height, dpr, cx, cy;
-  var HERO_CENTER_X = 0;
-  var HERO_CENTER_Y = 0;
-  var HERO_SCALE = 0;
+  var fragSrc = `
+precision highp float;
+uniform float u_time;
+uniform vec2 u_res;
+uniform float u_rotationSpeed;
+uniform float u_diskIntensity;
+uniform float u_starsOnly;
+uniform float u_tilt;
+uniform float u_rotate;
+uniform vec2 u_bhCenter;
+uniform float u_bhScale;
+uniform float u_chromatic;
 
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cx = HERO_SCALE > 0 ? width * HERO_CENTER_X : width / 2;
-    cy = HERO_SCALE > 0 ? height * HERO_CENTER_Y : height / 2;
-  }
+// ──── Constants ────
+const float PI = 3.14159265359;
+const float TAU = 6.28318530718;
+const float RS = 1.0;        // Schwarzschild radius
+const float ISCO = 3.0;      // Innermost stable circular orbit
+const float DISK_IN = 2.2;   // Inner glow edge (infalling material)
+const float DISK_OUT = 14.0;  // Outer disk edge
 
-  window.addEventListener('resize', resize);
-  resize();
+// ──────────────────────────────────────────
+// Hash — PCG-inspired, no sin()
+// ──────────────────────────────────────────
+float hash(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
 
-  // ── Metallic color palette ──
-  var PALETTE = [
-    { r: 185, g: 148, b: 100 }, // bronze
-    { r: 200, g: 170, b: 110 }, // brass
-    { r: 210, g: 175, b: 90  }, // gold
-    { r: 175, g: 130, b: 85  }, // copper
-    { r: 165, g: 142, b: 108 }, // antique bronze
-    { r: 195, g: 160, b: 105 }, // old gold
-    { r: 180, g: 155, b: 115 }, // warm silver
-    { r: 190, g: 145, b: 95  }, // deep bronze
-    { r: 205, g: 180, b: 130 }, // pale brass
-    { r: 170, g: 135, b: 90  }, // dark copper
-    { r: 200, g: 165, b: 100 }, // amber brass
-    { r: 188, g: 152, b: 98  }, // warm bronze
-  ];
+// ──────────────────────────────────────────
+// Gradient noise with quintic interpolation
+// ──────────────────────────────────────────
+float gNoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+    return mix(
+        mix(hash(i), hash(i + vec2(1, 0)), u.x),
+        mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x),
+        u.y
+    );
+}
 
-  // ── Gear definitions ──
-  var gearDefs = [];
-  var scale;
-
-  // Tooth profile constants — consistent across all gears for proper meshing
-  // Each tooth occupies one toothAngle = 2*PI/teeth
-  // Tooth land (raised part) is 40% of the pitch, gap is 60%
-  // This gives clearance for meshing teeth to fit into gaps
-  var TOOTH_LAND_FRACTION = 0.40;  // fraction of tooth pitch that is the raised tooth
-  var ADDENDUM_FACTOR = 1.0;       // tooth extends above pitch circle by mod * this
-  var DEDENDUM_FACTOR = 1.25;      // tooth root below pitch circle by mod * this
-
-  function buildGearSystem() {
-    var minDim = Math.min(width, height) / _pad;
-    scale = minDim / 700;
-    if (HERO_SCALE > 0) scale *= HERO_SCALE;
-
-    // Module in px: determines tooth size. All gears share same module for correct meshing.
-    // pitchRadius = (teeth * mod) / 2, so mod = 2 * pitchRadius / teeth
-    var mod = 4.2 * scale;
-
-    // Define gears: [teeth, spokeStyle, meshWith (parent index)]
-    // spokeStyle: 0=solid, 1=spoked, 2=cutout, 3=crossed
-    var defs = [
-      { teeth: 40, spoke: 1 },                          // 0: Central large gear
-      { teeth: 20, spoke: 2, meshWith: 0 },             // 1
-      { teeth: 28, spoke: 0, meshWith: 0 },             // 2
-      { teeth: 16, spoke: 3, meshWith: 0 },             // 3
-      { teeth: 24, spoke: 1, meshWith: 0 },             // 4
-      { teeth: 14, spoke: 2, meshWith: 1 },             // 5
-      { teeth: 18, spoke: 0, meshWith: 2 },             // 6
-      { teeth: 12, spoke: 3, meshWith: 3 },             // 7
-      { teeth: 22, spoke: 1, meshWith: 4 },             // 8
-      { teeth: 10, spoke: 2, meshWith: 5 },             // 9
-      { teeth: 10, spoke: 0, meshWith: 7 },             // 10
-      { teeth: 14, spoke: 3, meshWith: 8 },             // 11
-    ];
-
-    // Placement angles: angle from parent center to child center
-    var placementAngles = [
-      0,          // placeholder for central
-      -2.4,       // gear 1 from gear 0
-      -0.8,       // gear 2 from gear 0
-      0.7,        // gear 3 from gear 0
-      2.3,        // gear 4 from gear 0
-      -3.2,       // gear 5 from gear 1
-      -1.5,       // gear 6 from gear 2
-      1.5,        // gear 7 from gear 3
-      3.1,        // gear 8 from gear 4
-      -3.9,       // gear 9 from gear 5
-      2.2,        // gear 10 from gear 7
-      3.8,        // gear 11 from gear 8
-    ];
-
-    gearDefs = [];
-
-    // Create central gear (index 0)
-    var centralPitchR = defs[0].teeth * mod / 2;
-    gearDefs.push({
-      teeth: defs[0].teeth,
-      pitchRadius: centralPitchR,
-      x: cx,
-      y: cy,
-      phase: 0,   // phase offset in radians at t=0
-      speed: 1,
-      direction: 1,
-      color: PALETTE[0],
-      spokeStyle: defs[0].spoke,
-      mod: mod,
-      depth: 0,
-      parentIdx: -1
-    });
-
-    // Create all other gears with correct positioning and phase
-    for (var i = 1; i < defs.length; i++) {
-      var def = defs[i];
-      var parentIdx = def.meshWith;
-      var parent = gearDefs[parentIdx];
-      var childTeeth = def.teeth;
-      var childPitchR = childTeeth * mod / 2;
-      var meshDist = parent.pitchRadius + childPitchR;
-
-      // Position child gear
-      var placementAngle = placementAngles[i];
-      var gx = parent.x + Math.cos(placementAngle) * meshDist;
-      var gy = parent.y + Math.sin(placementAngle) * meshDist;
-
-      // Speed ratio: inversely proportional to tooth count
-      var speedRatio = parent.teeth / childTeeth;
-      var speed = parent.speed * speedRatio;
-      // Meshing gears always rotate in opposite directions
-      var direction = -parent.direction;
-
-      // ── Correct phase calculation for tooth meshing ──
-      //
-      // At the contact point (on the line connecting the two gear centers),
-      // a tooth on one gear must align with a gap on the other.
-      //
-      // For parent gear at time t:
-      //   parent tooth angle = parent.direction * parent.speed * t * ROTATION_SPEED + parent.phase
-      //   A tooth tip is at: rotation + k * (2*PI / parent.teeth) for integer k
-      //
-      // At t=0, the contact point is at angle `placementAngle` from the parent center.
-      // We need: at this angle, a parent tooth center aligns with a child gap center.
-      //
-      // Parent's tooth positions (centers of tooth tips) at t=0:
-      //   theta_parent_tooth_k = parent.phase + k * (2*PI / parent.teeth)
-      //
-      // The angle from parent center to contact point is `placementAngle`.
-      // We need this angle to fall at a tooth center of the parent (or close to one).
-      // Actually, we don't control parent.phase here (it's already set), so we figure
-      // out where the nearest parent tooth is relative to the contact point, then
-      // set child phase so a gap aligns there.
-      //
-      // Parent tooth angular pitch:
-      var parentPitch = (2 * Math.PI) / parent.teeth;
-      var childPitch = (2 * Math.PI) / childTeeth;
-      //
-      // At t=0, the parent tooth nearest the contact point:
-      // Contact angle from parent frame = placementAngle
-      // Parent rotation at t=0 = parent.phase
-      // So in the parent's rotating frame, the contact point is at:
-      //   contactInParentFrame = placementAngle - parent.phase
-      // Nearest tooth index to this angle:
-      //   nearestK = round(contactInParentFrame / parentPitch)
-      // Actual tooth angle in world frame:
-      //   nearestToothWorld = parent.phase + nearestK * parentPitch
-      //
-      // But actually, for the meshing to work continuously, we don't need the
-      // nearest tooth — we need the phase relationship. The fundamental constraint is:
-      //
-      //   parent.direction * parent.speed * t + parent.phase   (parent rotation)
-      //   child.direction  * child.speed  * t + child.phase    (child rotation)
-      //
-      // At the contact point, the angular position of each gear's teeth must
-      // be complementary. Specifically:
-      //
-      // The contact point in the parent's frame is at angle `placementAngle`.
-      // The contact point in the child's frame is at angle `placementAngle + PI`
-      // (opposite direction, since child center is on the other side).
-      //
-      // For meshing: when a parent tooth is at the contact point, a child VALLEY
-      // must be at the contact point. A valley is halfway between two teeth.
-      //
-      // Parent tooth at contact when:
-      //   (parent.phase + placementAngle) mod parentPitch == 0  (tooth center there)
-      // But parent.phase is already set, so the fractional offset is:
-      var parentFrac = ((parent.phase % parentPitch) + parentPitch) % parentPitch;
-      // The actual parent tooth phase at the contact line:
-      // In parent's rotating frame, contact is at placementAngle.
-      // Parent's teeth in world frame are at: parent.phase + k * parentPitch
-      // In parent's local frame (subtract parent.phase rotation at t=0), teeth are at k * parentPitch.
-      // The contact point in parent's local frame (at t=0, rotation = parent.phase):
-      var contactInParentLocal = placementAngle - parent.phase;
-      // The fractional tooth position at contact:
-      var parentToothPhaseAtContact = ((contactInParentLocal % parentPitch) + parentPitch) % parentPitch;
-      // This tells us: the contact point is `parentToothPhaseAtContact` radians past a tooth center.
-      //
-      // Now for the child: contact point from child center is at angle (placementAngle + PI).
-      // In child's local frame at t=0 (rotation = child.phase):
-      //   contactInChildLocal = (placementAngle + PI) - child.phase
-      //
-      // For meshing, child's tooth phase at contact must be offset by half a pitch (valley):
-      //   childToothPhaseAtContact = parentToothPhaseAtContact * (childTeeth / parent.teeth) + childPitch / 2
-      //
-      // Wait — simpler approach. The fundamental gear meshing constraint:
-      //   parent_rotation * parent.teeth + child_rotation * childTeeth = constant
-      //
-      // This is because for every tooth that passes the contact point on the parent,
-      // exactly one tooth must pass on the child (they share the same pitch at the
-      // pitch circle contact point).
-      //
-      // At t=0: parent_rotation = parent.phase, child_rotation = child.phase
-      //   parent.phase * parent.teeth + child.phase * childTeeth = C
-      //
-      // At t=dt: parent_rotation = parent.direction * parent.speed * dt + parent.phase
-      //          child_rotation  = child.direction  * child.speed  * dt + child.phase
-      //
-      //   (parent.direction * parent.speed * dt + parent.phase) * parent.teeth
-      //   + (child.direction * child.speed * dt + child.phase) * childTeeth = C
-      //
-      // This must hold for all dt, which gives:
-      //   parent.direction * parent.speed * parent.teeth + child.direction * child.speed * childTeeth = 0
-      //
-      // Check: parent.speed = S, child.speed = S * parent.teeth / childTeeth
-      //   parent.direction * S * parent.teeth + (-parent.direction) * (S * parent.teeth / childTeeth) * childTeeth
-      //   = parent.direction * S * parent.teeth - parent.direction * S * parent.teeth = 0 ✓
-      //
-      // Now we just need C such that teeth interlock (not collide).
-      // The condition is: at the contact point, when a parent tooth center is there,
-      // a child valley center must be there.
-      //
-      // At the contact point, the parent "tooth number" (possibly fractional) is:
-      //   parent_rotation_at_contact = parent.phase (world rotation)
-      //   In the direction of placementAngle from parent center.
-      //   Tooth number = (placementAngle - parent.phase) / parentPitch  (in parent local frame)
-      //   But more precisely, tooth number = (placementAngle) / parentPitch if phase=0
-      //   With phase: the local angle of the contact point = placementAngle - parent.phase
-      //   (this is because parent.phase is added to the rotation, so subtract it to get local)
-      //
-      // Actually let me think about it differently.
-      //
-      // The draw function does: ctx.rotate(direction * speed * t * ROTATION_SPEED + phase)
-      // Then teeth are drawn at angles k * (2*PI/teeth) for k = 0..teeth-1
-      //
-      // So in world coordinates, tooth k of the parent is at angle:
-      //   parentWorldAngle_k = parent.phase + k * parentPitch   (at t=0, direction*speed*0=0)
-      //
-      // The contact point from parent center is at angle `placementAngle`.
-      // The nearest parent tooth center to this angle (continuous fractional tooth index):
-      //   fracK = (placementAngle - parent.phase) / parentPitch
-      //
-      // For the child, its teeth in world coords at t=0:
-      //   childWorldAngle_j = child.phase + j * childPitch
-      //
-      // The contact point from child center is at angle (placementAngle + PI).
-      // The nearest child tooth center fractional index:
-      //   fracJ = (placementAngle + PI - child.phase) / childPitch
-      //
-      // For correct meshing, the fractional parts must differ by 0.5:
-      //   frac(fracK) and frac(fracJ) must satisfy:
-      //     frac(fracJ) = frac(fracK) + 0.5   (mod 1)
-      //
-      // Wait, that's not quite right either, because the gears have different
-      // numbers of teeth. The constraint is simpler:
-      //
-      //   parent.phase * parent.teeth + child.phase * childTeeth =
-      //     placementAngle * parent.teeth + (placementAngle + PI) * childTeeth + PI  (half tooth offset)
-      //
-      // Hmm, let me just use the direct approach:
-      //
-      // The contact happens along the line from parent to child center (at placementAngle).
-      // At t=0, in parent's local frame, the contact direction is at angle:
-      //   localContact_parent = placementAngle - parent.phase
-      //
-      // The nearest tooth center to this in the parent is at:
-      //   nearestParentTooth = round(localContact_parent / parentPitch) * parentPitch
-      //
-      // The offset of the contact from this nearest tooth:
-      //   offsetP = localContact_parent - nearestParentTooth
-      //
-      // In the child's local frame, the contact direction is at angle:
-      //   localContact_child = (placementAngle + PI) - child.phase
-      //
-      // For meshing, the child must have a VALLEY (gap center) where the parent has a tooth.
-      // The angular offset in the child frame, scaled by the gear ratio, must be opposite.
-      // Since both pitch circles move at the same linear speed at contact:
-      //   offsetP * parent.pitchRadius = -offsetC * child.pitchRadius (linear distance must match)
-      //   offsetP * (parent.teeth * mod / 2) = -offsetC * (childTeeth * mod / 2)
-      //   offsetP * parent.teeth = -offsetC * childTeeth
-      //   offsetC = -offsetP * parent.teeth / childTeeth
-      //
-      // And we want the child's nearest feature at the contact to be a valley, not a tooth.
-      // A valley center is at (k + 0.5) * childPitch.
-      //
-      // So: localContact_child should be at (k + 0.5) * childPitch + offsetC
-      //   (placementAngle + PI) - child.phase = round(...) * childPitch + childPitch/2 + offsetC
-      //
-      // Simplifying: we want child.phase such that:
-      //   The tooth/valley pattern of the child, when rotated by child.phase,
-      //   has a valley center at the contact angle offset by offsetC.
-      //
-      // Let me just solve for child.phase directly:
-
-      // Step 1: Find the parent's tooth phase at the contact point
-      var contactAngle = placementAngle;
-      var localContactP = contactAngle - parent.phase;
-      // Normalize to [0, parentPitch)
-      var parentPhaseAtContact2 = ((localContactP % parentPitch) + parentPitch) % parentPitch;
-      // This is how far past a tooth center the contact point is (in parent local frame)
-
-      // Step 2: The linear arc-length offset at the pitch circle
-      // On the parent pitch circle, the contact point is parentPhaseAtContact2 * parentPitchR past a tooth
-      // On the child pitch circle, this same linear distance corresponds to:
-      //   childAngularOffset = parentPhaseAtContact2 * parentPitchR / childPitchR
-      //                      = parentPhaseAtContact2 * parent.teeth / childTeeth
-      // But in opposite angular direction (gears roll opposite ways at contact):
-      var childAngularOffset = -parentPhaseAtContact2 * parent.teeth / childTeeth;
-
-      // Step 3: Set child phase so that a valley center (half-pitch offset from tooth)
-      // aligns at the contact point
-      // Contact in child local frame = (placementAngle + PI) - child.phase
-      // We want this to equal: (some integer) * childPitch + childPitch/2 + childAngularOffset
-      // => child.phase = (placementAngle + PI) - childAngularOffset - childPitch/2  (mod childPitch)
-      var childPhase = (contactAngle + Math.PI) - childAngularOffset - childPitch / 2;
-      // Normalize to [-PI, PI) for cleanliness (doesn't affect correctness)
-      childPhase = childPhase % (2 * Math.PI);
-
-      gearDefs.push({
-        teeth: childTeeth,
-        pitchRadius: childPitchR,
-        x: gx,
-        y: gy,
-        phase: childPhase,
-        speed: speed,
-        direction: direction,
-        color: PALETTE[i % PALETTE.length],
-        spokeStyle: def.spoke,
-        mod: mod,
-        depth: parent.depth + 1,
-        parentIdx: parentIdx,
-        meshAngle: placementAngle
-      });
+// ──────────────────────────────────────────
+// FBM with domain rotation (reduces grid artifacts)
+// ──────────────────────────────────────────
+float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    mat2 rot = mat2(0.866, 0.5, -0.5, 0.866); // 30 deg rotation
+    for (int i = 0; i < 4; i++) {
+        v += a * gNoise(p);
+        p = rot * p * 2.03 + vec2(47.0, 13.0);
+        a *= 0.49;
     }
-  }
+    return v;
+}
+// Lightweight 2-octave noise for subtle effects (nebula etc.)
+float fbmLite(vec2 p) {
+    float v = 0.5 * gNoise(p);
+    p = mat2(0.866, 0.5, -0.5, 0.866) * p * 2.03 + vec2(47.0, 13.0);
+    v += 0.25 * gNoise(p);
+    return v;
+}
 
-  buildGearSystem();
-  window.addEventListener('resize', function() {
-    resize();
-    buildGearSystem();
-  });
+// ──────────────────────────────────────────
+// Star field — cell-based with spherical UV
+// ──────────────────────────────────────────
+vec3 starField(vec3 rd) {
+    float u = atan(rd.z, rd.x) / TAU + 0.5;
+    float v = asin(clamp(rd.y, -0.999, 0.999)) / PI + 0.5;
+    vec3 col = vec3(0.0);
 
-  // ── Draw a gear with proper involute-style tooth profile ──
-  function drawGear(g, time) {
-    var teeth = g.teeth;
-    var pr = g.pitchRadius;
-    var mod = g.mod;
-    var addendum = mod * ADDENDUM_FACTOR;
-    var dedendum = mod * DEDENDUM_FACTOR;
-    var tipR = pr + addendum;       // outer radius (tooth tip)
-    var rootR = pr - dedendum;      // inner radius (tooth root)
+    // Bright sparse stars
+    {
+        vec2 cell = floor(vec2(u, v) * 55.0);
+        vec2 f = fract(vec2(u, v) * 55.0);
+        vec2 r = vec2(hash(cell), hash(cell + 127.1));
+        float d = length(f - r);
+        float b = pow(r.x, 10.0) * exp(-d * d * 500.0);
+        col += mix(vec3(1.0, 0.65, 0.35), vec3(0.55, 0.75, 1.0), r.y) * b * 4.0;
+    }
+    // Medium density stars
+    {
+        vec2 cell = floor(vec2(u, v) * 170.0);
+        vec2 f = fract(vec2(u, v) * 170.0);
+        vec2 r = vec2(hash(cell + 43.0), hash(cell + 91.0));
+        float d = length(f - r);
+        float b = pow(r.x, 18.0) * exp(-d * d * 1000.0);
+        col += vec3(0.85, 0.88, 1.0) * b * 2.0;
+    }
+    // Subtle nebula (lite noise — pow(3) crushes detail anyway)
+    float n = fbmLite(vec2(u, v) * 3.0) * fbmLite(vec2(u, v) * 5.5 + 10.0);
+    col += vec3(0.10, 0.04, 0.14) * pow(n, 3.0);
 
-    // Current rotation angle
-    var rot = g.direction * g.speed * time * ROTATION_SPEED + g.phase + g.direction * g.speed * mouseRotOffset;
+    return col;
+}
 
-    ctx.save();
-    ctx.translate(g.x, g.y);
-    ctx.rotate(rot);
+// ──────────────────────────────────────────
+// Blackbody color (physically motivated)
+// ──────────────────────────────────────────
+vec3 bbColor(float t) {
+    t = clamp(t, 0.0, 2.5);
+    vec3 lo = vec3(1.0, 0.18, 0.0);    // deep red     (~1500K)
+    vec3 mi = vec3(1.0, 0.55, 0.12);   // orange       (~3500K)
+    vec3 hi = vec3(1.0, 0.93, 0.82);   // warm white   (~8000K)
+    vec3 hot = vec3(0.65, 0.82, 1.0);  // cool blue-wh (~15000K)
+    vec3 c = mix(lo, mi, smoothstep(0.0, 0.3, t));
+    c = mix(c, hi, smoothstep(0.3, 0.8, t));
+    return mix(c, hot, smoothstep(0.8, 1.8, t));
+}
 
-    // ── Shadow / depth ──
-    if (g.depth > 0) {
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-      ctx.shadowBlur = 8 * scale;
-      ctx.shadowOffsetX = 2 * scale;
-      ctx.shadowOffsetY = 2 * scale;
+// ──────────────────────────────────────────
+// Accretion disk shading
+//   Novikov-Thorne temperature profile
+//   FBM turbulence + spiral arms
+//   Doppler beaming + gravitational redshift
+// ──────────────────────────────────────────
+vec4 shadeDisk(vec3 hit, vec3 vel, float time) {
+    float r = length(hit.xz);
+    if (r < DISK_IN * 0.5 || r > DISK_OUT * 1.05) return vec4(0.0);
+
+    // Novikov-Thorne: T proportional to r^-3/4 (1 - sqrt(r_isco/r))^1/4
+    float xr = ISCO / r;
+    float tProfile = pow(ISCO / r, 0.75) * pow(max(0.001, 1.0 - sqrt(xr)), 0.25);
+
+    // Gravitational redshift: observed temp = emitted * sqrt(1 - RS/r)
+    float gRedshift = sqrt(max(0.01, 1.0 - RS / r));
+    tProfile *= gRedshift;
+
+    // Disk texture with Keplerian differential rotation
+    float phi = atan(hit.z, hit.x);
+    float lr = log2(max(r, 0.1));
+
+    // Keplerian angular velocity with a floor so outer disk still moves
+    float keplerOmega = sqrt(0.5 * RS / (r * r * r));
+    float baseOmega = 0.04; // minimum rotation for outer rings
+    float omega = max(keplerOmega, baseOmega) * 10.0;
+    float rotAngle = time * omega;
+    float ca = cos(rotAngle), sa = sin(rotAngle);
+    vec2 rotXZ = vec2(hit.x * ca - hit.z * sa, hit.x * sa + hit.z * ca);
+
+    // FBM turbulence — the primary texture, gives cloudy organic feel
+    // Sampled at Keplerian-rotated coords for orbital flow
+    float turb = fbm(rotXZ * 1.2 + vec2(lr * 3.0));
+    turb = 0.25 + 0.75 * turb;
+
+    // Time-evolving detail layer — single noise call (subtle contribution)
+    float timeShift = time * 0.15;
+    float detail = gNoise(rotXZ * 3.5 + vec2(100.0 + timeShift, timeShift * 0.7));
+    turb *= 0.7 + 0.3 * detail;
+
+    // Concentric ring modulation — visible structure within the clouds
+    float ringPhase1 = sin(r * 10.0 + rotAngle * r * 0.3) * 0.5 + 0.5;
+    float ringPhase2 = sin(r * 20.0 - rotAngle * r * 0.15) * 0.5 + 0.5;
+    float rings = ringPhase1 * 0.55 + ringPhase2 * 0.45;
+    rings = 0.5 + 0.5 * rings;
+    turb *= rings;
+
+    // Doppler beaming from Keplerian orbital motion
+    // Reduced from 3.0 to 2.0 so the receding side stays visible
+    float orbSpeed = sqrt(0.5 * RS / max(r, DISK_IN));
+    vec3 orbDir = normalize(vec3(-hit.z, 0.0, hit.x));
+    float dopplerFactor = 1.0 + 2.0 * dot(normalize(vel), orbDir) * orbSpeed;
+    dopplerFactor = max(0.15, dopplerFactor);
+    float dopplerBoost = dopplerFactor * dopplerFactor * dopplerFactor;
+
+    // Intensity
+    float I = tProfile * turb * 6.0;
+
+    // Edge fades
+    float innerFade = smoothstep(DISK_IN * 0.7, DISK_IN * 1.2, r);
+    // ISCO fade — emission ramps up beyond ISCO
+    float iscoFade = 0.35 + 0.65 * smoothstep(ISCO * 0.85, ISCO * 1.2, r);
+    float outerFade = 1.0 - smoothstep(DISK_OUT * 0.55, DISK_OUT, r);
+    I *= innerFade * iscoFade * outerFade;
+
+    // Color: temperature + Doppler frequency shift
+    // Approaching side: blue-shifted (higher temp), receding: red-shifted (lower temp)
+    float colorTemp = tProfile * pow(dopplerFactor, 1.8) * 1.2;
+    vec3 col = bbColor(colorTemp) * I * dopplerBoost;
+
+    // Chromatic dispersion: each ring band gets a spectral hue
+    if (u_chromatic > 0.01) {
+        // Smooth spectral mapping based on radius
+        // Uses the actual ring structure phase for band-coherent coloring
+        float spectralR = (r - DISK_IN) / (DISK_OUT - DISK_IN);
+        float ringP = ringPhase1; // from the ring structure above
+
+        // Combine radial position and ring phase for spectral position
+        // This ensures each bright ring band has its own distinct hue
+        float hue = spectralR * 0.8 + ringP * 0.4;
+
+        // Full visible spectrum: red → orange → yellow → green → cyan → blue
+        vec3 spectrum;
+        // Red channel: strong at low hue, returns at high hue (wraps around)
+        spectrum.r = (1.0 - smoothstep(0.0, 0.35, hue))  // red at start
+                   + smoothstep(0.25, 0.45, hue) * (1.0 - smoothstep(0.55, 0.7, hue)) * 0.7  // orange/yellow
+                   + smoothstep(0.85, 1.1, hue) * 0.4; // faint return
+        // Green channel: broad peak in the middle (yellow → green → cyan)
+        spectrum.g = smoothstep(0.15, 0.4, hue) * (1.0 - smoothstep(0.7, 0.95, hue));
+        // Blue channel: peaks at high hue (cyan → blue)
+        spectrum.b = smoothstep(0.5, 0.8, hue)
+                   + smoothstep(0.85, 1.1, hue) * 0.3; // violet hint
+        spectrum = max(spectrum, 0.05);
+
+        // Preserve luminance from the original color
+        float luma = dot(col, vec3(0.3, 0.5, 0.2));
+        vec3 chromaCol = spectrum * luma * 2.0;
+
+        col = mix(col, chromaCol, u_chromatic * 0.75);
     }
 
-    // ── Gear tooth outline path ──
-    // Each tooth spans toothAngle = 2*PI / teeth
-    // Tooth center is at baseAngle = k * toothAngle
-    // The raised portion (tooth land) spans TOOTH_LAND_FRACTION of the pitch
-    // The gap spans (1 - TOOTH_LAND_FRACTION) of the pitch
-    ctx.beginPath();
-    var toothAngle = (2 * Math.PI) / teeth;
-    var halfToothArc = toothAngle * TOOTH_LAND_FRACTION / 2;
-    var flangeWidth = toothAngle * 0.06; // width of the transition flank
+    float alpha = clamp(I * 1.3, 0.0, 0.96);
+    return vec4(col, alpha);
+}
 
-    for (var t = 0; t < teeth; t++) {
-      var baseAngle = t * toothAngle;
+// ──────────────────────────────────────────
+// Main — Schwarzschild geodesic ray tracer
+// Uses velocity-Verlet integration of:
+//   d²x/dλ² = -1.5 · RS · L² / r⁵ · x
+// where L² = |x × v|² is the conserved angular momentum
+// ──────────────────────────────────────────
+void main() {
+    vec2 fc = gl_FragCoord.xy;
+    vec2 ctr = (u_bhScale > 0.0 ? u_bhCenter : vec2(0.5)) * u_res;
+    float sc = u_bhScale > 0.0 ? u_bhScale : 1.0;
+    vec2 uv = (fc - ctr) * sc / u_res.x;
 
-      // Angles for tooth profile (symmetric about baseAngle):
-      // Root arc: from previous gap end to flank start
-      var rootStart = baseAngle - toothAngle / 2;
-      var flankStart = baseAngle - halfToothArc - flangeWidth;
-      var tipStart = baseAngle - halfToothArc;
-      var tipEnd = baseAngle + halfToothArc;
-      var flankEnd = baseAngle + halfToothArc + flangeWidth;
-      var rootEnd = baseAngle + toothAngle / 2;
+    // Orbital camera
+    float camR = 28.0;
+    float orbit = u_time * 0.055 * u_rotationSpeed;
+    float tilt = 0.25 + u_tilt;
 
-      if (t === 0) {
-        ctx.moveTo(Math.cos(rootStart) * rootR, Math.sin(rootStart) * rootR);
-      }
+    vec3 eye = vec3(
+        camR * cos(orbit) * cos(tilt),
+        camR * sin(tilt),
+        camR * sin(orbit) * cos(tilt)
+    );
 
-      // Root arc to start of rise flank
-      ctx.arc(0, 0, rootR, rootStart, flankStart, false);
+    // Look-at basis
+    vec3 fwd = normalize(-eye);
+    vec3 rt = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+    vec3 up = cross(rt, fwd);
 
-      // Rise flank: smooth curve from root to tip
-      var riseCtrlR = (rootR + tipR) / 2 + (tipR - rootR) * 0.15;
-      var riseCtrlAngle = (flankStart + tipStart) / 2;
-      ctx.quadraticCurveTo(
-        Math.cos(riseCtrlAngle) * riseCtrlR,
-        Math.sin(riseCtrlAngle) * riseCtrlR,
-        Math.cos(tipStart) * tipR,
-        Math.sin(tipStart) * tipR
-      );
+    // Roll rotation
+    float cr = cos(u_rotate), sr = sin(u_rotate);
+    vec3 rr = cr * rt + sr * up;
+    vec3 ru = -sr * rt + cr * up;
 
-      // Tooth tip arc
-      ctx.arc(0, 0, tipR, tipStart, tipEnd, false);
+    vec3 rd = normalize(fwd + uv.x * rr + uv.y * ru);
 
-      // Fall flank: smooth curve from tip to root
-      var fallCtrlAngle = (tipEnd + flankEnd) / 2;
-      ctx.quadraticCurveTo(
-        Math.cos(fallCtrlAngle) * riseCtrlR,
-        Math.sin(fallCtrlAngle) * riseCtrlR,
-        Math.cos(flankEnd) * rootR,
-        Math.sin(flankEnd) * rootR
-      );
-
-      // Root arc to next tooth
-      ctx.arc(0, 0, rootR, flankEnd, rootEnd, false);
-    }
-    ctx.closePath();
-
-    // ── Metallic gradient fill ──
-    var col = g.color;
-    var specAngle = time * 0.3 + g.depth * 1.5;
-    var specX = Math.cos(specAngle) * pr * 0.3;
-    var specY = Math.sin(specAngle) * pr * 0.3;
-
-    var grad = ctx.createRadialGradient(specX, specY, pr * 0.05, 0, 0, tipR);
-    var brightR = Math.min(255, col.r + 70);
-    var brightG = Math.min(255, col.g + 60);
-    var brightB = Math.min(255, col.b + 50);
-    var darkR = Math.max(0, col.r - 60) | 0;
-    var darkG = Math.max(0, col.g - 60) | 0;
-    var darkB = Math.max(0, col.b - 60) | 0;
-
-    grad.addColorStop(0, 'rgba(' + brightR + ',' + brightG + ',' + brightB + ',0.95)');
-    grad.addColorStop(0.3, 'rgba(' + col.r + ',' + col.g + ',' + col.b + ',0.88)');
-    grad.addColorStop(0.7, 'rgba(' + (col.r - 30) + ',' + (col.g - 30) + ',' + (col.b - 25) + ',0.85)');
-    grad.addColorStop(1, 'rgba(' + darkR + ',' + darkG + ',' + darkB + ',0.9)');
-
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // ── Edge highlight / bevel ──
-    ctx.strokeStyle = 'rgba(' + brightR + ',' + brightG + ',' + brightB + ',0.25)';
-    ctx.lineWidth = 0.8 * scale;
-    ctx.stroke();
-
-    if (g.depth > 0) {
-      ctx.restore();
+    // Stars-only bypass
+    if (u_starsOnly > 0.5) {
+        vec3 s = starField(rd);
+        gl_FragColor = vec4(pow(s, vec3(0.45)), 1.0);
+        return;
     }
 
-    // ── Surface etching / detail lines (scaled by GEAR_DETAIL) ──
-    if (GEAR_DETAIL > 0.3) {
-      var etchAlpha = 0.08 * Math.min(GEAR_DETAIL, 1.5);
+    // ──── Geodesic integration ────
+    vec3 pos = eye;
+    vec3 vel = rd;
 
-      // Concentric circles on gear face
-      var numRings = Math.floor(3 * GEAR_DETAIL);
-      for (var ring = 1; ring <= numRings; ring++) {
-        var ringR = rootR * (0.35 + 0.15 * ring);
-        if (ringR > rootR - 2) break;
-        ctx.beginPath();
-        ctx.arc(0, 0, ringR, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(' + brightR + ',' + brightG + ',' + brightB + ',' + etchAlpha + ')';
-        ctx.lineWidth = 0.5 * scale;
-        ctx.stroke();
-      }
+    // Angular momentum (conserved along Schwarzschild geodesic)
+    vec3 Lvec = cross(pos, vel);
+    float L2 = dot(Lvec, Lvec);
 
-      // Radial tick marks
-      if (GEAR_DETAIL >= 0.7) {
-        var numTicks = teeth * 2;
-        var tickInner = rootR * 0.5;
-        var tickOuter = rootR * 0.55;
-        for (var tk = 0; tk < numTicks; tk++) {
-          var ta = (tk / numTicks) * Math.PI * 2;
-          ctx.beginPath();
-          ctx.moveTo(Math.cos(ta) * tickInner, Math.sin(ta) * tickInner);
-          ctx.lineTo(Math.cos(ta) * tickOuter, Math.sin(ta) * tickOuter);
-          ctx.strokeStyle = 'rgba(' + brightR + ',' + brightG + ',' + brightB + ',' + (etchAlpha * 0.7) + ')';
-          ctx.lineWidth = 0.4 * scale;
-          ctx.stroke();
+    vec4 diskAccum = vec4(0.0);
+    vec3 glow = vec3(0.0);
+    bool absorbed = false;
+    int diskCrossings = 0;
+    float minR = 1000.0; // track closest approach for photon ring
+
+    // Pre-compute loop invariant
+    float gravCoeff = -1.5 * RS * L2;
+
+    for (int i = 0; i < 200; i++) {
+        float r = length(pos);
+
+        // Adaptive step: fine near BH, coarse far away
+        float h = 0.16 * clamp(r - 0.4 * RS, 0.06, 3.5);
+
+        // Schwarzschild geodesic: a = -1.5·RS·L²/r⁵ · x
+        float invR2 = 1.0 / (r * r);
+        float invR5 = invR2 * invR2 / r;
+        vec3 acc = (gravCoeff * invR5) * pos;
+
+        // Velocity-Verlet integration (symplectic, energy-preserving)
+        vec3 p1 = pos + vel * h + 0.5 * acc * h * h;
+        float r1 = length(p1);
+        float invR12 = 1.0 / (r1 * r1);
+        float invR15 = invR12 * invR12 / r1;
+        vec3 acc1 = (gravCoeff * invR15) * p1;
+        vec3 v1 = vel + 0.5 * (acc + acc1) * h;
+
+        // Track closest approach
+        minR = min(minR, r1);
+
+        // ── Disk crossing detection (y=0 plane) ──
+        if (pos.y * p1.y < 0.0 && diskAccum.a < 0.97) {
+            float t = pos.y / (pos.y - p1.y);
+            vec3 hit = mix(pos, p1, t);
+            vec4 dc = shadeDisk(hit, vel, u_time * u_rotationSpeed);
+            dc.rgb *= u_diskIntensity;
+            // 1st & 2nd crossings: full (primary disk + secondary image)
+            // 3rd+ crossings: heavily attenuated (these create the crispy 1px photon ring)
+            if (diskCrossings >= 2) {
+                dc.rgb *= 0.15;
+                dc.a *= 0.15;
+            }
+            // Alpha-over compositing
+            diskAccum.rgb += dc.rgb * dc.a * (1.0 - diskAccum.a);
+            diskAccum.a += dc.a * (1.0 - diskAccum.a);
+            // Bloom spillover: bright disk regions bleed glow
+            float diskBright = dot(dc.rgb, vec3(0.3, 0.5, 0.2)) * dc.a;
+            glow += dc.rgb * 0.04 * max(diskBright - 0.3, 0.0);
+            diskCrossings++;
         }
-      }
 
-      // Cross-hatch pattern on some gears
-      if (GEAR_DETAIL >= 1.2 && (g.spokeStyle === 0 || g.spokeStyle === 2)) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(0, 0, rootR * 0.4, 0, Math.PI * 2);
-        ctx.clip();
+        // ── Glow calculations only when close to BH (negligible contribution beyond r=6) ──
+        if (r1 < 6.0) {
+            // Soft ambient glow near BH (very diffuse, no sharp peak)
+            float pDist = abs(r1 - 1.5 * RS);
+            float psGlow = 1.0 / (1.0 + pDist * pDist * 20.0) * h * 0.001 / max(r1 * r1, 0.2);
+            glow += vec3(0.8, 0.6, 0.35) * psGlow;
 
-        var step = 6 * scale;
-        var span = rootR * 0.4;
-        ctx.strokeStyle = 'rgba(' + brightR + ',' + brightG + ',' + brightB + ',' + (etchAlpha * 0.4) + ')';
-        ctx.lineWidth = 0.3 * scale;
-        for (var hx = -span; hx <= span; hx += step) {
-          ctx.beginPath();
-          ctx.moveTo(hx, -span);
-          ctx.lineTo(hx, span);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(-span, hx);
-          ctx.lineTo(span, hx);
-          ctx.stroke();
+            // Event horizon proximity glow
+            float hzGlow = exp(-(r1 - RS) * 3.5) * h * 0.003;
+            glow += vec3(0.5, 0.25, 0.08) * max(hzGlow, 0.0);
         }
-        ctx.restore();
-      }
+
+        // ── Termination ──
+        if (r1 < RS * 0.35) { absorbed = true; break; }
+        // Early escape: ray moving outward past disk range, deflection negligible
+        if (r1 > 25.0 && r1 > r) break;
+        if (r1 > 55.0) break;
+
+        pos = p1;
+        vel = v1;
     }
 
-    // ── Spoke / cutout patterns ──
-    var hubR = Math.max(pr * 0.12, 4 * scale);
-    var spokeOuterR = rootR * 0.85;
-
-    if (g.spokeStyle === 1 && pr > 20 * scale) {
-      var numSpokes = pr > 50 * scale ? 6 : 5;
-      var cutoutInnerR = hubR + 4 * scale;
-      var cutoutOuterR = spokeOuterR - 2 * scale;
-
-      for (var s = 0; s < numSpokes; s++) {
-        var sa1 = (s / numSpokes) * Math.PI * 2 + 0.05;
-        var sa2 = ((s + 1) / numSpokes) * Math.PI * 2 - 0.05;
-
-        ctx.beginPath();
-        ctx.arc(0, 0, cutoutOuterR, sa1, sa2, false);
-        ctx.arc(0, 0, cutoutInnerR, sa2, sa1, true);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(8, 8, 8, 0.65)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(' + darkR + ',' + darkG + ',' + darkB + ',0.3)';
-        ctx.lineWidth = 0.5 * scale;
-        ctx.stroke();
-      }
-    } else if (g.spokeStyle === 2 && pr > 18 * scale) {
-      var numHoles = pr > 40 * scale ? 5 : 4;
-      var holeR = (spokeOuterR - hubR) * 0.3;
-      var holeDist = (hubR + spokeOuterR) / 2;
-      for (var h = 0; h < numHoles; h++) {
-        var ha = (h / numHoles) * Math.PI * 2;
-        var hx2 = Math.cos(ha) * holeDist;
-        var hy2 = Math.sin(ha) * holeDist;
-        ctx.beginPath();
-        ctx.arc(hx2, hy2, holeR, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(8, 8, 8, 0.6)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(' + darkR + ',' + darkG + ',' + darkB + ',0.35)';
-        ctx.lineWidth = 0.6 * scale;
-        ctx.stroke();
-      }
-    } else if (g.spokeStyle === 3 && pr > 18 * scale) {
-      ctx.strokeStyle = 'rgba(' + darkR + ',' + darkG + ',' + darkB + ',0.25)';
-      ctx.lineWidth = 1.5 * scale;
-      for (var cs = 0; cs < 4; cs++) {
-        var csa = (cs / 4) * Math.PI * 2 + Math.PI / 8;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(csa) * hubR, Math.sin(csa) * hubR);
-        ctx.lineTo(Math.cos(csa) * spokeOuterR, Math.sin(csa) * spokeOuterR);
-        ctx.stroke();
-      }
-      for (var cs2 = 0; cs2 < 4; cs2++) {
-        var arcA1 = (cs2 / 4) * Math.PI * 2 + Math.PI / 8 + 0.15;
-        var arcA2 = ((cs2 + 1) / 4) * Math.PI * 2 + Math.PI / 8 - 0.15;
-        var cutR = (hubR + spokeOuterR) / 2;
-        var cutSize = (spokeOuterR - hubR) * 0.28;
-        var arcMid = (arcA1 + arcA2) / 2;
-        ctx.beginPath();
-        ctx.arc(Math.cos(arcMid) * cutR, Math.sin(arcMid) * cutR, cutSize, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(8, 8, 8, 0.55)';
-        ctx.fill();
-      }
+    // ──── Final compositing ────
+    vec3 col = vec3(0.0);
+    if (!absorbed) {
+        col = starField(normalize(vel));
     }
+    // Disk over background
+    col = col * (1.0 - diskAccum.a) + diskAccum.rgb;
 
-    // ── Central hub / axle ──
-    var hubGrad = ctx.createRadialGradient(0, 0, hubR * 0.2, 0, 0, hubR * 1.5);
-    hubGrad.addColorStop(0, 'rgba(' + brightR + ',' + brightG + ',' + brightB + ',0.9)');
-    hubGrad.addColorStop(0.5, 'rgba(' + col.r + ',' + col.g + ',' + col.b + ',0.85)');
-    hubGrad.addColorStop(1, 'rgba(' + darkR + ',' + darkG + ',' + darkB + ',0.8)');
+    // ── Shadow-edge chromatic fringe ──
+    // Replaces the old sharp 1px ring with smooth, wide RGB separation
+    float ringDist = abs(minR - 1.5 * RS);
+    float chromo = u_chromatic;
 
-    ctx.beginPath();
-    ctx.arc(0, 0, hubR * 1.4, 0, Math.PI * 2);
-    ctx.fillStyle = hubGrad;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(' + brightR + ',' + brightG + ',' + brightB + ',0.3)';
-    ctx.lineWidth = 0.6 * scale;
-    ctx.stroke();
+    // Soft wide chromatic bands: red/orange outside, blue inside
+    // No center "white ring" — purely spectral separation
+    float baseChroma = 0.1 + 0.5 * chromo;
+    float spread = 0.08 + 0.18 * chromo;
+    float falloff = 20.0 + 15.0 * (1.0 - chromo); // wider/softer bands
+    float rRing = exp(-(ringDist + spread) * (ringDist + spread) * falloff);
+    float bRing = exp(-(ringDist - spread) * (ringDist - spread) * falloff);
+    col.r += rRing * 0.3 * baseChroma;
+    col.b += bRing * 0.35 * baseChroma;
 
-    // Inner axle hole
-    ctx.beginPath();
-    ctx.arc(0, 0, hubR * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(15, 12, 10, 0.9)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(' + col.r + ',' + col.g + ',' + col.b + ',0.2)';
-    ctx.lineWidth = 0.5 * scale;
-    ctx.stroke();
+    // Glow additive
+    col += glow;
 
-    // Decorative screws/dots on hub
-    if (hubR > 5 * scale) {
-      var numDots = 6;
-      var dotDist = hubR * 0.95;
-      var dotR2 = Math.max(1, hubR * 0.15);
-      for (var d = 0; d < numDots; d++) {
-        var da = (d / numDots) * Math.PI * 2 + rot * 0.2;
-        var dx = Math.cos(da) * dotDist;
-        var dy = Math.sin(da) * dotDist;
-        ctx.beginPath();
-        ctx.arc(dx, dy, dotR2, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(' + brightR + ',' + brightG + ',' + brightB + ',0.5)';
-        ctx.fill();
-      }
+    // Filmic tone mapping (ACES-inspired) + contrast
+    col *= 1.4;
+    vec3 a = col * (col + 0.0245786) - 0.000090537;
+    vec3 b = col * (0.983729 * col + 0.4329510) + 0.238081;
+    col = a / b;
+
+    col = smoothstep(0.0, 1.0, col);
+    col = pow(max(col, 0.0), vec3(0.92));
+
+    gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}
+`;
+
+  function compile(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error('Shader compile error:', gl.getShaderInfoLog(s));
     }
-
-    ctx.restore();
+    return s;
   }
 
-  // ── Background texture ──
-  function drawBackground() {
-    ctx.fillStyle = '#0a0a0a';
-    ctx.fillRect(0, 0, width, height);
-
-    if (GEAR_DETAIL >= 0.5) {
-      var gridSpacing = 24;
-      ctx.fillStyle = 'rgba(200, 149, 108, 0.012)';
-      for (var gx = 0; gx < width; gx += gridSpacing) {
-        for (var gy = 0; gy < height; gy += gridSpacing) {
-          ctx.fillRect(gx, gy, 1, 1);
-        }
-      }
-    }
-
-    var vig = ctx.createRadialGradient(cx, cy, Math.min(width, height) * 0.15, cx, cy, Math.max(width, height) * 0.65);
-    vig.addColorStop(0, 'rgba(25, 20, 15, 0.0)');
-    vig.addColorStop(0.5, 'rgba(10, 10, 10, 0.0)');
-    vig.addColorStop(1, 'rgba(5, 3, 2, 0.6)');
-    ctx.fillStyle = vig;
-    ctx.fillRect(0, 0, width, height);
+  var prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vertSrc));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fragSrc));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error('Program link error:', gl.getProgramInfoLog(prog));
   }
+  gl.useProgram(prog);
 
-  // ── Ambient glow behind gears ──
-  function drawAmbientGlow(time) {
-    var glowR = Math.min(width, height) * 0.35;
-    var pulse = 1 + 0.05 * Math.sin(time * 0.8);
-    var glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR * pulse);
-    glow.addColorStop(0, 'rgba(200, 149, 108, 0.04)');
-    glow.addColorStop(0.4, 'rgba(185, 140, 90, 0.02)');
-    glow.addColorStop(1, 'rgba(185, 140, 90, 0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, width, height);
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  var aPos = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-    var glow2X = cx + Math.cos(time * 0.15) * 60 * scale;
-    var glow2Y = cy + Math.sin(time * 0.2) * 40 * scale;
-    var glow2 = ctx.createRadialGradient(glow2X, glow2Y, 0, glow2X, glow2Y, glowR * 0.5);
-    glow2.addColorStop(0, 'rgba(210, 175, 90, 0.03)');
-    glow2.addColorStop(1, 'rgba(210, 175, 90, 0)');
-    ctx.fillStyle = glow2;
-    ctx.fillRect(0, 0, width, height);
-  }
+  var uTime = gl.getUniformLocation(prog, 'u_time');
+  var uRes = gl.getUniformLocation(prog, 'u_res');
+  var uRotationSpeed = gl.getUniformLocation(prog, 'u_rotationSpeed');
+  var uDiskIntensity = gl.getUniformLocation(prog, 'u_diskIntensity');
+  var uStarsOnly = gl.getUniformLocation(prog, 'u_starsOnly');
+  var uTilt = gl.getUniformLocation(prog, 'u_tilt');
+  var uRotate = gl.getUniformLocation(prog, 'u_rotate');
+  var uBhCenter = gl.getUniformLocation(prog, 'u_bhCenter');
+  var uBhScale = gl.getUniformLocation(prog, 'u_bhScale');
+  var uChromatic = gl.getUniformLocation(prog, 'u_chromatic');
 
-  // ── Floating dust/spark particles ──
-  var particles = [];
-  var NUM_PARTICLES = 80;
+  var rotationSpeedVal = 0.3;
+  var diskIntensityVal = 1.0;
+  var starsOnlyVal = 0.0;
+  var tiltVal = 0.0;
+  var rotateVal = 0.0;
+  var bhCenterX = 0.0;
+  var bhCenterY = 0.0;
+  var bhScaleVal = 0.0;
+  var chromaticVal = 0.0;
 
-  function initParticles() {
-    particles = [];
-    for (var i = 0; i < NUM_PARTICLES; i++) {
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.15,
-        vy: (Math.random() - 0.5) * 0.15 - 0.1,
-        size: 0.5 + Math.random() * 1.5,
-        alpha: 0.1 + Math.random() * 0.25,
-        life: Math.random() * 200,
-        maxLife: 200 + Math.random() * 200
-      });
-    }
-  }
-  initParticles();
-
-  function updateAndDrawParticles(time) {
-    for (var i = 0; i < particles.length; i++) {
-      var p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life++;
-
-      if (p.life > p.maxLife || p.x < -20 || p.x > width + 20 || p.y < -20 || p.y > height + 20) {
-        p.x = cx + (Math.random() - 0.5) * Math.min(width, height) * 0.6;
-        p.y = cy + (Math.random() - 0.5) * Math.min(height, width) * 0.6;
-        p.life = 0;
-        p.maxLife = 200 + Math.random() * 200;
-      }
-
-      var fadeIn = Math.min(1, p.life / 30);
-      var fadeOut = Math.max(0, 1 - (p.life - p.maxLife + 30) / 30);
-      var alpha = p.alpha * fadeIn * fadeOut;
-
-      if (alpha > 0.01) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * scale, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(210, 180, 130, ' + alpha + ')';
-        ctx.fill();
-      }
-    }
-  }
-
-  // ── Main render loop ──
-  var startTime = null;
-  var running = true;
-
-  function render(timestamp) {
-    if (!running) {
-      requestAnimationFrame(render);
-      return;
-    }
-
-    if (!startTime) startTime = timestamp;
-    var time = prefersReduced ? 0 : (timestamp - startTime) / 1000;
-
-    drawBackground();
-    drawAmbientGlow(time);
-
-    // Draw gears back-to-front (higher depth = drawn later = on top)
-    var sortedIndices = [];
-    for (var i = 0; i < gearDefs.length; i++) sortedIndices.push(i);
-    sortedIndices.sort(function(a, b) {
-      return gearDefs[b].depth - gearDefs[a].depth;
-    });
-
-    for (var si = 0; si < sortedIndices.length; si++) {
-      drawGear(gearDefs[sortedIndices[si]], time);
-    }
-
-    updateAndDrawParticles(time);
-
-    // Top vignette layer
-    var topVig = ctx.createRadialGradient(cx, cy, Math.min(width, height) * 0.3, cx, cy, Math.max(width, height) * 0.7);
-    topVig.addColorStop(0, 'rgba(10, 10, 10, 0)');
-    topVig.addColorStop(1, 'rgba(5, 3, 2, 0.35)');
-    ctx.fillStyle = topVig;
-    ctx.fillRect(0, 0, width, height);
-
-    requestAnimationFrame(render);
-  }
-
-  // Mouse: drag to manually rotate the gear system
-  var mouseDown = false, lastMX = 0, mouseRotOffset = 0;
-  canvas.addEventListener('mousedown', function(e) { mouseDown = true; lastMX = e.clientX; });
+  // Mouse drag to control viewing angle
+  var mouseDown = false;
+  var lastMX = 0, lastMY = 0;
+  canvas.addEventListener('mousedown', function(e) { mouseDown = true; lastMX = e.clientX; lastMY = e.clientY; });
   canvas.addEventListener('mousemove', function(e) {
     if (mouseDown) {
-      mouseRotOffset += (e.clientX - lastMX) * 0.005;
-      lastMX = e.clientX;
+      tiltVal += (e.clientY - lastMY) * 0.003;
+      rotateVal += (e.clientX - lastMX) * 0.003;
+      tiltVal = Math.max(-0.8, Math.min(0.8, tiltVal));
+      lastMX = e.clientX; lastMY = e.clientY;
     }
   });
   canvas.addEventListener('mouseup', function() { mouseDown = false; });
-  canvas.addEventListener('touchstart', function(e) { e.preventDefault(); mouseDown = true; lastMX = e.touches[0].clientX; }, { passive: false });
+  canvas.addEventListener('touchstart', function(e) { e.preventDefault(); mouseDown = true; lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY; }, { passive: false });
   canvas.addEventListener('touchmove', function(e) {
     e.preventDefault();
     if (mouseDown) {
-      mouseRotOffset += (e.touches[0].clientX - lastMX) * 0.005;
-      lastMX = e.touches[0].clientX;
+      tiltVal += (e.touches[0].clientY - lastMY) * 0.003;
+      rotateVal += (e.touches[0].clientX - lastMX) * 0.003;
+      tiltVal = Math.max(-0.8, Math.min(0.8, tiltVal));
+      lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
     }
   }, { passive: false });
   canvas.addEventListener('touchend', function() { mouseDown = false; });
 
+  var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  var needsResize = true;
+  var running = true;
+
+  function resize() {
+    needsResize = false;
+    var w = Math.round(canvas.clientWidth * dpr);
+    var h = Math.round(canvas.clientHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+      gl.viewport(0, 0, w, h);
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+    }
+  }
+
+  function render(now) {
+    if (!running) return;
+    if (needsResize) resize();
+    var t = prefersReduced ? 0.0 : now * 0.001;
+    gl.uniform1f(uTime, t);
+    gl.uniform1f(uRotationSpeed, rotationSpeedVal);
+    gl.uniform1f(uDiskIntensity, diskIntensityVal);
+    gl.uniform1f(uStarsOnly, starsOnlyVal);
+    gl.uniform1f(uTilt, tiltVal);
+    gl.uniform1f(uRotate, rotateVal);
+    gl.uniform2f(uBhCenter, bhCenterX, bhCenterY);
+    gl.uniform1f(uBhScale, bhScaleVal);
+    gl.uniform1f(uChromatic, chromaticVal);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(render);
+  }
+
+  window.addEventListener('resize', function () {
+    needsResize = true;
+  });
+
+  resize();
+
   requestAnimationFrame(render);
 
-  // ── Visibility handling ──
-  document.addEventListener('visibilitychange', function() {
+  document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
       running = false;
     } else {
       running = true;
-      startTime = null;
+      requestAnimationFrame(render);
     }
   });
 
-  // ── PostMessage param listener ──
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'param') {
       switch (e.data.name) {
-        case 'ROTATION_SPEED': ROTATION_SPEED = e.data.value; break;
-        case 'GEAR_DETAIL': GEAR_DETAIL = e.data.value; break;
-        case 'CENTER_X': HERO_CENTER_X = e.data.value; resize(); buildGearSystem(); break;
-        case 'CENTER_Y': HERO_CENTER_Y = e.data.value; resize(); buildGearSystem(); break;
-        case 'SCALE': HERO_SCALE = e.data.value; resize(); buildGearSystem(); break;
+        case 'ROTATION_SPEED': rotationSpeedVal = e.data.value; break;
+        case 'DISK_INTENSITY': diskIntensityVal = e.data.value; break;
+        case 'STARS_ONLY': starsOnlyVal = e.data.value; break;
+        case 'TILT': tiltVal = e.data.value; break;
+        case 'ROTATE': rotateVal = e.data.value; break;
+        case 'BH_CENTER_X': bhCenterX = e.data.value; break;
+        case 'BH_CENTER_Y': bhCenterY = e.data.value; break;
+        case 'BH_SCALE': bhScaleVal = e.data.value; break;
+        case 'CHROMATIC': chromaticVal = e.data.value; break;
       }
     }
   });
