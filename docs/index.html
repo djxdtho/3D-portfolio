@@ -1197,28 +1197,42 @@ class Pt{
   }
 }
 for(let i=0;i<50;i++)p.push(new Pt());
-bgCanvas.addEventListener('mousemove',e=>{cancelAnimationFrame(rafId);rafId=requestAnimationFrame(()=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true})},{passive:true});
+bgCanvas.addEventListener('mousemove',e=>{cancelAnimationFrame(rafId);rafId=requestAnimationFrame(()=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true;constMouse.x=e.clientX;constMouse.y=e.clientY})},{passive:true});
 bgCanvas.addEventListener('mouseleave',()=>mIn=false,{passive:true});
 
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(rs,200)},{passive:true});
 
-// Fixed constellation stars
+// Constellation stars — slowly follow cursor
+let constMouse={x:window.innerWidth/2,y:window.innerHeight/2};
 const constStars=[];
 for(let i=0;i<80;i++){
   constStars.push({
     x:Math.random()*window.innerWidth,
     y:Math.random()*window.innerHeight,
+    ox:0,oy:0,
     s:Math.random()*2.5+.8,
     o:Math.random()*.2+.12,
     twinkle:Math.random()*Math.PI*2,
-    speed:.003+Math.random()*.008
+    speed:.003+Math.random()*.008,
+    pull:(.002+Math.random()*.004)*(Math.random()>.5?1:-1)
   });
 }
 function drawConstellations(ctx,w,h){
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
     s.twinkle+=s.speed;
+    // Slowly drift toward cursor
+    const dx=constMouse.x-s.x,dy=constMouse.y-s.y;
+    const distToMouse=Math.sqrt(dx*dx+dy*dy);
+    if(distToMouse>1){
+      s.x+=dx*s.pull*.02;
+      s.y+=dy*s.pull*.02;
+    }
+    // Wrap around edges
+    if(s.x<-50)s.x=w+50;if(s.x>w+50)s.x=-50;
+    if(s.y<-50)s.y=h+50;if(s.y>h+50)s.y=-50;
+
     const glow=Math.sin(s.twinkle)*.5+.5;
     const alpha=s.o*(.6+glow*.4);
     ctx.beginPath();ctx.arc(s.x,s.y,s.s,0,Math.PI*2);
@@ -1228,7 +1242,7 @@ function drawConstellations(ctx,w,h){
     g.addColorStop(1,'transparent');
     ctx.fillStyle=g;ctx.fill();
     for(let j=i+1;j<constStars.length;j++){
-      const dx=s.x-constStars[j].x,dy=s.y-constStars[j].y,dist=Math.sqrt(dx*dx+dy*dy);
+      const dx2=s.x-constStars[j].x,dy2=s.y-constStars[j].y,dist=Math.sqrt(dx2*dx2+dy2*dy2);
       if(dist<160){
         const op=.08*(1-dist/160);
         ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(constStars[j].x,constStars[j].y);
