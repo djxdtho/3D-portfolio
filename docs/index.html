@@ -1214,11 +1214,11 @@ for(let i=0;i<n;i++){
     x3:r*Math.cos(theta),y3:y,z3:r*Math.sin(theta),
     sx:Math.random()*window.innerWidth,
     sy:Math.random()*window.innerHeight,
-    cx:0,cy:0,
-    s:1+Math.random()*2,
-    o:.12+Math.random()*.18,
+    cx:0,cy:0,oz:0,
+    s:.8+Math.random()*2.2,
+    o:.15+Math.random()*.2,
     twinkle:Math.random()*Math.PI*2,
-    spd:.004+Math.random()*.008,
+    spd:.005+Math.random()*.01,
   });
 }
 
@@ -1247,91 +1247,103 @@ function drawConstellations(ctx,w,h){
     break;
   case 'explode':
     phaseT+=1/90;
-    if(phaseT>=1){phaseT=0;phase='scatter';constStars.forEach(s=>{s.sx=Math.random()*w;s.sy=Math.random()*h;});}
+    if(phaseT>=1){phaseT=0;phase='scatter';
+      constStars.forEach(s=>{s.sx=Math.random()*w;s.sy=Math.random()*h;});
+    }
     break;
   }
 
   const baseR=Math.min(w,h)*.1;
-  let size=1,rotSpd=0,convergeT=0,explodeT=0,showLines=false;
+  let size=1,rotSpd=0,lineBlend=0;
+  const ct=easeIO(phaseT);
+  const et=easeOut(phaseT);
 
   if(phase==='scatter'){
-    showLines=false;
+    lineBlend=0;
   } else if(phase==='converge'){
-    convergeT=easeIO(phaseT);
-    rotSpd=convergeT*.004;
-    size=.3+convergeT*.7;
-    showLines=convergeT>.5;
+    rotSpd=ct*.004;
+    size=.3+ct*.7;
+    lineBlend=Math.max(0,(ct-.35)/.45);
   } else if(phase==='orbit'){
     const t=easeIO(phaseT);
     rotSpd=.008+t*.045;
     size=1+t*.7;
-    showLines=true;
+    lineBlend=1;
   } else if(phase==='explode'){
-    explodeT=easeOut(phaseT);
-    rotSpd=.05*(1-explodeT);
-    size=1.7-explodeT*.7;
-    showLines=explodeT<.7;
+    rotSpd=.05*(1-et);
+    size=1.7-et*.7;
+    lineBlend=Math.max(0,(.55-et)/.55);
   }
 
   const curR=baseR*size;
   rotAngle+=rotSpd;
   const cosA=Math.cos(rotAngle),sinA=Math.sin(rotAngle);
 
-  // First pass: compute positions
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
-
     const x2=s.x3*cosA-s.z3*sinA;
     const z2=s.x3*sinA+s.z3*cosA;
-    const scale=1/(1+z2*.12);
-    const rx=cx+x2*curR*scale;
-    const ry=cy+s.y3*curR*scale;
+    const sc=1/(1+z2*.15);
+    const rx=cx+x2*curR*sc;
+    const ry=cy+s.y3*curR*sc;
+    s.oz=z2;
 
     if(phase==='scatter'){
       s.cx+=(s.sx-s.cx)*.02;
       s.cy+=(s.sy-s.cy)*.02;
-      s.cx+=Math.sin(s.twinkle*2+i)*.15;
-      s.cy+=Math.cos(s.twinkle*1.3+i*.7)*.15;
+      s.cx+=Math.sin(s.twinkle*2+i)*.2;
+      s.cy+=Math.cos(s.twinkle*1.3+i*.7)*.2;
     } else if(phase==='converge'){
-      s.cx=s.sx+(rx-s.sx)*convergeT;
-      s.cy=s.sy+(ry-s.sy)*convergeT;
+      s.cx=s.sx+(rx-s.sx)*ct;
+      s.cy=s.sy+(ry-s.sy)*ct;
     } else if(phase==='orbit'){
       s.cx=rx;
       s.cy=ry;
     } else if(phase==='explode'){
-      s.cx=rx+(s.sx-rx)*explodeT;
-      s.cy=ry+(s.sy-ry)*explodeT;
+      s.cx=rx+(s.sx-rx)*et;
+      s.cy=ry+(s.sy-ry)*et;
     }
   }
 
-  // Lines (during sphere phases)
-  if(showLines){
-    const lineAlpha=phase==='orbit'?.035:.02;
-    const dist=phase==='orbit'?80:60;
+  // Lines fade in/out with blend
+  if(lineBlend>0){
+    const ld=phase==='orbit'?65:55;
     ctx.beginPath();
     for(let i=0;i<constStars.length;i+=2){
       for(let j=i+2;j<constStars.length;j+=3){
         const dx=constStars[i].cx-constStars[j].cx;
         const dy=constStars[i].cy-constStars[j].cy;
-        if(dx*dx+dy*dy<dist*dist){
+        if(dx*dx+dy*dy<ld*ld){
           ctx.moveTo(constStars[i].cx,constStars[i].cy);
           ctx.lineTo(constStars[j].cx,constStars[j].cy);
         }
       }
     }
-    ctx.strokeStyle=`rgba(255,255,255,${lineAlpha})`;
-    ctx.lineWidth=.4;ctx.stroke();
+    ctx.strokeStyle=`rgba(255,255,255,${.03*lineBlend})`;
+    ctx.lineWidth=.35;ctx.stroke();
   }
 
-  // Draw stars
+  // Draw stars with depth + twinkle
+  const onSphere=phase==='orbit'||(phase==='converge'&&ct>.3);
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
     s.twinkle+=s.spd;
-    const glow=Math.sin(s.twinkle)*.5+.5;
-    const alpha=s.o*(.4+glow*.6);
-    ctx.beginPath();ctx.arc(s.cx,s.cy,s.s,0,Math.PI*2);
-    ctx.fillStyle=`rgba(255,255,255,${alpha})`;
+    const tw=Math.sin(s.twinkle)*.5+.5;
+    const df=onSphere?1-Math.max(0,s.oz)*.35:1;
+    const sz=s.s*df*(onSphere?.8+size*.3:.8);
+    const al=s.o*(.3+tw*.7)*df;
+    ctx.beginPath();
+    ctx.arc(s.cx,s.cy,sz,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${al})`;
     ctx.fill();
+
+    // Subtle glow on brighter stars
+    if(al>.25){
+      ctx.beginPath();
+      ctx.arc(s.cx,s.cy,sz*2.5,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${al*.08})`;
+      ctx.fill();
+    }
   }
 }
 
