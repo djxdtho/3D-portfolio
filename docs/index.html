@@ -1390,7 +1390,7 @@ tiers.forEach(t=>{
 const colors=['#ff6b35','#b5e853','#00d4ff','#ff9a8b','#e8f5ff','#f0b429'];
 const pfoGrid=document.getElementById('portfolioGrid');
 const projects=[
-  {title:'Calculator',desc:'A sleek glass-morphism calculator with basic arithmetic, keyboard support, and responsive design.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/calculator/',icon:'⟐',color:'#00d4ff'},
+  {title:'Calculator',desc:'A sleek glass-morphism calculator with basic arithmetic, keyboard support, and responsive design.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/calculator/',icon:'<img src="https://djxdtho.github.io/calculator/favicon.svg" alt="" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
 ];
 for(let i=0;i<6;i++){
   const item=document.createElement('div');item.className='portfolio-item';
@@ -1405,7 +1405,7 @@ for(let i=0;i<6;i++){
     item.addEventListener('click',()=>window.open(p.url,'_blank'));
     item.innerHTML=`
       <div class="thumb" style="background:linear-gradient(135deg,${p.color}33,${p.color}11);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px">
-        <div style="font-size:3rem;font-weight:800;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,${p.color},${p.color}88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transform:rotate(-${tilt}deg);opacity:.8">${p.icon}</div>
+        <div style="transform:rotate(-${tilt}deg);opacity:.8;line-height:1">${p.icon}</div>
       </div>
       <div class="tag" style="font-family:'Space Grotesk',sans-serif;font-weight:700;background:${p.color}22;border-color:${p.color}44;color:${p.color}">Live</div>
       <div class="info">
