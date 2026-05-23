@@ -1202,85 +1202,172 @@ document.addEventListener('mousemove',e=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{rs();},300)},{passive:true});
 
-// ─── Orbiting Sphere (Smooth) ───
+// ─── Multiple Constellations → Sphere → Explode ───
 const constStars=[];
-const n=100;
+const n=102;
+const GROUPS=[
+  {cx:.18,cy:.18,s:1,shape:'triangle'},
+  {cx:.82,cy:.18,s:1,shape:'ring'},
+  {cx:.12,cy:.55,s:1,shape:'zigzag'},
+  {cx:.88,cy:.55,s:1,shape:'diamond'},
+  {cx:.25,cy:.85,s:1,shape:'pentagon'},
+  {cx:.75,cy:.85,s:1,shape:'cross'},
+];
+const gSize=17; // 6*17=102
+
+// Generate group shape positions (relative to group center at 0,0)
+function shapePts(type,count,sp){
+  const pts=[];
+  function edge(verts,n){
+    for(let i=0;i<n;i++){
+      const seg=Math.floor(Math.random()*verts.length);
+      const t=Math.random();
+      const x=verts[seg].x+(verts[(seg+1)%verts.length].x-verts[seg].x)*t;
+      const y=verts[seg].y+(verts[(seg+1)%verts.length].y-verts[seg].y)*t;
+      pts.push({x:x+Math.random()*sp*.06,y:y+Math.random()*sp*.06});
+    }
+  }
+  switch(type){
+  case 'triangle':{
+    const s=sp;const h=s*Math.sqrt(3)/2;
+    edge([{x:0,y:-h*2/3},{x:s/2,y:h/3},{x:-s/2,y:h/3}],count);
+    break;
+  }
+  case 'ring':
+    for(let i=0;i<count;i++){
+      const a=(i/count)*Math.PI*2;
+      const r=sp*.8+Math.random()*sp*.12;
+      pts.push({x:Math.cos(a)*r,y:Math.sin(a)*r});
+    }
+    break;
+  case 'zigzag':{
+    const steps=Math.floor(count/2);
+    for(let i=0;i<count;i++){
+      const t=i/count;
+      const x=(t-.5)*sp*1.6;
+      const y=Math.sin(t*Math.PI*6)*sp*.3+(Math.random()-.5)*sp*.04;
+      pts.push({x,y});
+    }
+    break;
+  }
+  case 'diamond':{
+    const s=sp*.7;
+    edge([{x:0,y:-s},{x:s,y:0},{x:0,y:s},{x:-s,y:0}],count);
+    break;
+  }
+  case 'pentagon':{
+    const outer=sp*.7,inner=outer*.45;
+    const verts=[];
+    for(let i=0;i<10;i++){
+      const a=(i*Math.PI/5)-Math.PI/2;
+      const r=i%2===0?outer:inner;
+      verts.push({x:Math.cos(a)*r,y:Math.sin(a)*r});
+    }
+    edge(verts,count);
+    break;
+  }
+  case 'cross':{
+    const s=sp*.8,w=sp*.12;
+    const hPts=Math.floor(count/2);
+    for(let i=0;i<count;i++){
+      if(i<hPts){
+        const t=(i/(hPts-1))-.5;
+        pts.push({x:t*s,y:(Math.random()-.5)*w});
+      } else {
+        const t=((i-hPts)/(count-hPts-1))-.5;
+        pts.push({x:(Math.random()-.5)*w,y:t*s});
+      }
+    }
+    break;
+  }
+  }
+  return pts;
+}
+
+// Fibonacci sphere positions
 const phi=Math.PI*(3-Math.sqrt(5));
+const spherePts=[];
 for(let i=0;i<n;i++){
   const y=1-(i/(n-1))*2;
   const r=Math.sqrt(1-y*y);
   const theta=phi*i;
-  constStars.push({
-    x3:r*Math.cos(theta),y3:y,z3:r*Math.sin(theta),
-    cx:0,cy:0,startX:0,startY:0,
-    hideX:Math.random()*window.innerWidth,
-    hideY:Math.random()*window.innerHeight,
-    expX:0,expY:0,
-    s:1+Math.random()*2,
-    o:.12+Math.random()*.18,
-    twinkle:Math.random()*Math.PI*2,
-    spd:.004+Math.random()*.008,
-  });
+  spherePts.push({x:r*Math.cos(theta),y:y,z:r*Math.sin(theta)});
 }
 
-let phase='init';
+// Build stars + pre-group
+let idx=0;
+const starGroups=[];
+for(let g=0;g<GROUPS.length;g++){
+  starGroups[g]=[];
+  const grp=GROUPS[g];
+  const shape=shapePts(grp.shape,gSize,90);
+  for(let i=0;i<gSize;i++){
+    const sp=spherePts[idx];
+    const star={
+      gi:g,gx:shape[i].x,gy:shape[i].y,
+      x3:sp.x,y3:sp.y,z3:sp.z,
+      cx:0,cy:0,
+      s:1+Math.random()*2,
+      o:.12+Math.random()*.18,
+      twinkle:Math.random()*Math.PI*2,
+      spd:.004+Math.random()*.008,
+    };
+    constStars.push(star);
+    starGroups[g].push(star);
+    idx++;
+  }
+}
+
+let phase='idle';
 let phaseT=0;
 let rotAngle=0;
 
+function easeIO(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+function easeOut(t){return 1-Math.pow(1-t,3);}
+
 function drawConstellations(ctx,w,h){
-  const baseR=Math.min(w,h)*.1;
   const cx=w/2,cy=h/2;
 
-  // Phase transitions with smooth overlap
   switch(phase){
-  case 'init':
-    phaseT+=.015;
+  case 'idle':
+    phaseT+=1/180;
+    if(phaseT>=1){phaseT=0;phase='converge';}
+    break;
+  case 'converge':
+    phaseT+=1/120;
     if(phaseT>=1){phaseT=1;phase='orbit';}
     break;
   case 'orbit':
-    phaseT+=.004;
-    if(phaseT>=1){phaseT=0;phase='explode';constStars.forEach(s=>{
-      s.startX=s.cx;s.startY=s.cy;
-      const ang=Math.atan2(s.y3,s.x3)+Math.random()*.8-.4;
-      const elev=Math.asin(s.y3)+Math.random()*.3-.15;
-      const mag=200+Math.random()*500;
-      s.expX=cx+Math.cos(ang)*Math.cos(elev)*mag;
-      s.expY=cy+Math.sin(elev)*mag;
-    });}
+    phaseT+=1/300;
+    if(phaseT>=1){phaseT=0;phase='explode';}
     break;
   case 'explode':
-    phaseT+=.02;
-    if(phaseT>=1){phaseT=0;phase='reform';}
-    break;
-  case 'reform':
-    phaseT+=.012;
-    if(phaseT>=1){phaseT=0;phase='orbit';}
+    phaseT+=1/100;
+    if(phaseT>=1){phaseT=0;phase='idle';}
     break;
   }
 
-  // Smooth eases per phase
-  let easeInit, easeOrbitSpeed, easeRadius, easeExplode, easeReform;
-  let size=1,rotSpd=.006,orbitT=0;
+  // Compute group centers (fractional positions)
+  const groupCents=GROUPS.map(g=>({x:g.cx*w,y:g.cy*h}));
 
-  if(phase==='init'){
-    easeInit=phaseT<.5?2*phaseT*phaseT:1-Math.pow(-2*phaseT+2,2)/2;
-    size=.2+easeInit*.8;
-    rotSpd=0;
+  // Sphere params
+  const baseR=Math.min(w,h)*.1;
+  let size=1,rotSpd=0,convergeT=0,explodeT=0;
+
+  if(phase==='idle'){
+    // Constellations visible, gentle twinkle
+  } else if(phase==='converge'){
+    convergeT=easeIO(phaseT);
+    rotSpd=convergeT*.003;
+    size=.3+convergeT*.7;
   } else if(phase==='orbit'){
-    easeOrbitSpeed=phaseT<.5?2*phaseT*phaseT:1-Math.pow(-2*phaseT+2,2)/2;
-    rotSpd=.006+easeOrbitSpeed*.04;
-    size=1+easeOrbitSpeed*.7;
-    orbitT=phaseT;
+    const t=easeIO(phaseT);
+    rotSpd=.008+t*.04;
+    size=1+t*.7;
   } else if(phase==='explode'){
-    easeExplode=phaseT<.5?2*phaseT*phaseT:1-Math.pow(-2*phaseT+2,2)/2;
-    size=1.7*(1-easeExplode*.4);
-    rotSpd=.046*(1-easeExplode);
-    orbitT=.75;
-  } else if(phase==='reform'){
-    easeReform=phaseT<.5?2*phaseT*phaseT:1-Math.pow(-2*phaseT+2,2)/2;
-    size=.3+easeReform*.7;
-    rotSpd=easeReform*.006;
-    orbitT=0;
+    explodeT=easeOut(phaseT);
+    rotSpd=.048*(1-explodeT);
+    size=1.7-explodeT*.7;
   }
 
   const curR=baseR*size;
@@ -1289,6 +1376,12 @@ function drawConstellations(ctx,w,h){
 
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
+    const grp=GROUPS[s.gi];
+    const gc=groupCents[s.gi];
+
+    // Constellation target position (group center + shape offset, scaled)
+    const gtx=gc.x+s.gx;
+    const gty=gc.y+s.gy;
 
     // Sphere surface position (rotated)
     const x2=s.x3*cosA-s.z3*sinA;
@@ -1297,46 +1390,48 @@ function drawConstellations(ctx,w,h){
     const rx=cx+x2*curR*scale;
     const ry=cy+s.y3*curR*scale;
 
-    // Blend between states based on current phase
-    if(phase==='init'){
-      const t=easeInit;
-      s.cx=s.hideX*(1-t)+rx*t;
-      s.cy=s.hideY*(1-t)+ry*t;
+    // Phase blend
+    if(phase==='idle'){
+      s.cx+=(gtx-s.cx)*.06;
+      s.cy+=(gty-s.cy)*.06;
+    } else if(phase==='converge'){
+      s.cx=gtx+(rx-gtx)*convergeT;
+      s.cy=gty+(ry-gty)*convergeT;
     } else if(phase==='orbit'){
       s.cx=rx;
       s.cy=ry;
     } else if(phase==='explode'){
-      s.cx=s.startX+(s.expX-s.startX)*easeExplode;
-      s.cy=s.startY+(s.expY-s.startY)*easeExplode;
-    } else if(phase==='reform'){
-      s.cx=s.expX+(rx-s.expX)*easeReform;
-      s.cy=s.expY+(ry-s.expY)*easeReform;
+      s.cx=rx+(gtx-rx)*explodeT;
+      s.cy=ry+(gty-ry)*explodeT;
     }
 
     s.twinkle+=s.spd;
     const glow=Math.sin(s.twinkle)*.5+.5;
     const alpha=s.o*(.4+glow*.6);
-    const sz=s.s*(.5+size*.3);
-    ctx.beginPath();ctx.arc(s.cx,s.cy,sz,0,Math.PI*2);
+    ctx.beginPath();ctx.arc(s.cx,s.cy,s.s,0,Math.PI*2);
     ctx.fillStyle=`rgba(255,255,255,${alpha})`;
     ctx.fill();
   }
 
-  // Connections — sparse web
-  const webDist=phase==='explode'||phase==='reform'?180:70;
+  // Within-group connections
+  const connAlpha=phase==='idle'?.05:.02;
+  const groupConnDist=phase==='idle'?120:50;
   ctx.beginPath();
-  for(let i=0;i<constStars.length;i+=2){
-    for(let j=i+2;j<constStars.length;j+=3){
-      const dx=constStars[i].cx-constStars[j].cx;
-      const dy=constStars[i].cy-constStars[j].cy;
-      const dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<webDist){
-        ctx.moveTo(constStars[i].cx,constStars[i].cy);
-        ctx.lineTo(constStars[j].cx,constStars[j].cy);
+  for(let g=0;g<starGroups.length;g++){
+    const m=starGroups[g];
+    for(let i=0;i<m.length;i+=2){
+      for(let j=i+2;j<m.length;j+=3){
+        const dx=m[i].cx-m[j].cx;
+        const dy=m[i].cy-m[j].cy;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<groupConnDist){
+          ctx.moveTo(m[i].cx,m[i].cy);
+          ctx.lineTo(m[j].cx,m[j].cy);
+        }
       }
     }
   }
-  ctx.strokeStyle='rgba(255,255,255,.025)';
+  ctx.strokeStyle=`rgba(255,255,255,${connAlpha})`;
   ctx.lineWidth=.35;ctx.stroke();
 }
 
