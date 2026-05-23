@@ -1241,16 +1241,17 @@ grd.addColorStop(.35,'rgba(255,255,255,.4)');
 grd.addColorStop(1,'rgba(255,255,255,0)');
 gc.fillStyle=grd;gc.fillRect(0,0,64,64);
 
-let cPhase='scatter',cTimer=0,rotA=0;
-let scatProg=0,formProg=0,accelProg=0,explProg=0;
+let cPhase='spread',cTimer=0,rotA=0;
+let formProg=0,accelProg=0,explProg=0;
 
 function drawConstellations(ctx,w,h){
   const cx=w/2,cy=h/2,baseR=Math.min(w,h)*.115;
 
   // ── Phase machine ──
-  if(cPhase==='scatter'){
-    scatProg=Math.min(1,scatProg+.012);
-    if(scatProg>=1){scatProg=0;cPhase='form';cTimer=0;}
+  if(cPhase==='spread'){
+    cTimer++;
+    if(cTimer>=360){cTimer=0;cPhase='form';formProg=0;
+      constStars.forEach(s=>{s.sx=s.cx;s.sy=s.cy;});}
   } else if(cPhase==='form'){
     cTimer++;formProg=Math.min(1,cTimer/180);
     if(formProg>=1){cPhase='orbit';cTimer=0;}
@@ -1259,22 +1260,19 @@ function drawConstellations(ctx,w,h){
     if(accelProg>=1){cPhase='explode';cTimer=0;}
   } else if(cPhase==='explode'){
     cTimer++;explProg=Math.min(1,cTimer/80);
-    if(explProg>=1){cPhase='reform';cTimer=0;scatProg=0;}
-  } else if(cPhase==='reform'){
-    cTimer++;const t=Math.min(1,cTimer/150);
-    if(t>=1){cPhase='orbit';cTimer=0;accelProg=0;}
+    if(explProg>=1){cPhase='spread';cTimer=0;
+      constStars.forEach(s=>{s.sx=Math.random()*w;s.sy=Math.random()*h;});}
   }
 
   // ── Sphere state ──
-  const formEase=cPhase==='form'?1-Math.pow(1-formProg,3):1;
+  const formEase=1-Math.pow(1-formProg,3);
   const accel=accelProg<.5?2*accelProg*accelProg:1-Math.pow(-2*accelProg+2,2)/2;
   const explEase=1-Math.pow(1-explProg,2);
   let spd=0,size=1;
-  if(cPhase==='scatter'){spd=0;size=0;}
+  if(cPhase==='spread'){spd=0;size=0;}
   else if(cPhase==='form'){spd=.002*formEase;size=formEase;}
   else if(cPhase==='orbit'){spd=.006+accel*.044;size=1+accel*.7;}
   else if(cPhase==='explode'){spd=.05*(1-explEase);size=1.7-explEase*.6;}
-  else {spd=.006;size=1;}
 
   const curR=baseR*size;
   rotA+=spd;
@@ -1305,17 +1303,17 @@ function drawConstellations(ctx,w,h){
     const ry=cy+y1*curR*sc;
     s.depth=z2;
 
-    if(cPhase==='scatter'){
-      const t=1-Math.pow(1-scatProg,3);
-      s.cx=s.sx*(1-t)+cx*t;
-      s.cy=s.sy*(1-t)+cy*t;
+    if(cPhase==='spread'){
+      s.cx+=(s.sx-s.cx)*.025;
+      s.cy+=(s.sy-s.cy)*.025;
+      s.cx+=Math.sin(s.twinkle*2+i)*.2;
+      s.cy+=Math.cos(s.twinkle*1.3+i*.7)*.2;
+    } else if(cPhase==='form'){
+      s.cx=s.sx+(rx-s.sx)*formEase;
+      s.cy=s.sy+(ry-s.sy)*formEase;
     } else if(cPhase==='explode'){
       s.cx=rx+(s.ex-rx)*explEase;
       s.cy=ry+(s.ey-ry)*explEase;
-    } else if(cPhase==='reform'){
-      const t=Math.min(1,cTimer/150);
-      s.cx+=(rx-s.cx)*.04*(1+t);
-      s.cy+=(ry-s.cy)*.04*(1+t);
     } else {
       s.cx=rx;
       s.cy=ry;
