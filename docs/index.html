@@ -1301,15 +1301,15 @@ const paraEls=document.querySelectorAll('.parallax-section');
 let ticking=false;
 document.addEventListener('scroll',()=>{
   if(!ticking){ticking=true;requestAnimationFrame(()=>{
-    const n=document.querySelector('nav');
+    const navEl=document.querySelector('nav');
     const st=window.scrollY;
     const dh=document.documentElement.scrollHeight-window.innerHeight;
-    if(st>80){n.style.background='rgba(14,14,14,.85)';n.style.boxShadow='0 8px 40px rgba(0,0,0,.5)'}
-    else{n.style.background='var(--glass-bg)';n.style.boxShadow='0 8px 32px var(--glass-shadow)'}
+    if(st>80){navEl.style.background='rgba(14,14,14,.85)';navEl.style.boxShadow='0 8px 40px rgba(0,0,0,.5)'}
+    else{navEl.style.background='var(--glass-bg)';navEl.style.boxShadow='0 8px 32px var(--glass-shadow)'}
     const pct=Math.min(st/dh,1);
     progressBar.style.width=(pct*100)+'%';
-    const n=Math.floor(20+pct*350);
-    if(n!==activeStars){activeStars=Math.min(n,maxN);}
+    const sn=Math.floor(20+pct*350);
+    if(sn!==activeStars){activeStars=Math.min(sn,maxN);}
     let current='';
     navSections.forEach(({id,el})=>{
       const top=el.offsetTop-200;
