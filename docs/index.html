@@ -1197,56 +1197,95 @@ class Pt{
   }
 }
 for(let i=0;i<50;i++)p.push(new Pt());
-document.addEventListener('mousemove',e=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true;constMouse.x=e.clientX;constMouse.y=e.clientY},{passive:true});
+document.addEventListener('mousemove',e=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true},{passive:true});
 
 let resizeTimer;
-window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(rs,200)},{passive:true});
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{rs();constStars.length=0;const t=generateStarTargets(120,window.innerWidth,window.innerHeight);t.forEach(s=>constStars.push(s));constStars.forEach(s=>{s.cx=Math.random()*window.innerWidth;s.cy=Math.random()*window.innerHeight});constStarted=true;},300)},{passive:true});
 
-// Constellation stars — slowly follow cursor
-let constMouse={x:window.innerWidth/2,y:window.innerHeight/2};
-const constStars=[];
-for(let i=0;i<80;i++){
-  constStars.push({
-    x:Math.random()*window.innerWidth,
-    y:Math.random()*window.innerHeight,
-    ox:0,oy:0,
-    s:Math.random()*2.5+.8,
-    o:Math.random()*.2+.12,
-    twinkle:Math.random()*Math.PI*2,
-    speed:.003+Math.random()*.008,
-    pull:.002+Math.random()*.004
-  });
+// ─── Constellation Stars — Form a 5-Pointed Star Shape ───
+// Generate target positions forming a 5-pointed star outline + fill
+function generateStarTargets(count,w,h){
+  const cx=w/2,cy=h/2;
+  const outerR=Math.min(w,h)*.3;
+  const innerR=outerR*.4;
+  const pts=[];
+  for(let i=0;i<count;i++){
+    // Mix of outline and interior points
+    const t=Math.random();
+    let angle,r;
+    if(t<.5){
+      // On the star outline
+      const spike=Math.floor(Math.random()*5);
+      const a1=(spike*2*Math.PI/5)-Math.PI/2;
+      const a2=((spike+1)*2*Math.PI/5)-Math.PI/2;
+      const mid=Math.random();
+      angle=a1+(a2-a1)*mid;
+      const isOuter=mid<.5;
+      r=isOuter?outerR*(.9+Math.random()*.1):innerR*(.9+Math.random()*.1);
+    } else {
+      // Random inside the star
+      const spike=Math.floor(Math.random()*5);
+      const a1=(spike*2*Math.PI/5)-Math.PI/2;
+      const a2=((spike+1)*2*Math.PI/5)-Math.PI/2;
+      angle=a1+(a2-a1)*Math.random();
+      r=innerR+(outerR-innerR)*Math.random();
+    }
+    // Add some noise
+    angle+=(Math.random()-.5)*.15;
+    r*=.95+Math.random()*.1;
+    pts.push({
+      x:cx+Math.cos(angle)*r,
+      y:cy+Math.sin(angle)*r,
+      s:.8+Math.random()*2.2,
+      o:.1+Math.random()*.2,
+      twinkle:Math.random()*Math.PI*2,
+      speed:.003+Math.random()*.008,
+      // Current position starts random
+      cx:Math.random()*w,
+      cy:Math.random()*h,
+      // Animation progress
+      progress:0,
+      delay:Math.random()*2
+    });
+  }
+  return pts;
 }
+
+const constStars=generateStarTargets(120,window.innerWidth,window.innerHeight);
+let constStarted=false;
+
 function drawConstellations(ctx,w,h){
+  if(!constStarted){
+    constStars.forEach(s=>{s.cx=Math.random()*w;s.cy=Math.random()*h});
+    constStarted=true;
+  }
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
-    s.twinkle+=s.speed;
-    // Slowly drift toward cursor
-    const dx=constMouse.x-s.x,dy=constMouse.y-s.y;
-    const distToMouse=Math.sqrt(dx*dx+dy*dy);
-    if(distToMouse>1){
-      s.x+=dx*s.pull*.15;
-      s.y+=dy*s.pull*.15;
+    // Animate toward target with delay
+    if(s.delay>0){s.delay-=.016}else if(s.progress<1){
+      s.progress+=.004;
+      if(s.progress>1)s.progress=1;
     }
-    // Wrap around edges
-    if(s.x<-50)s.x=w+50;if(s.x>w+50)s.x=-50;
-    if(s.y<-50)s.y=h+50;if(s.y>h+50)s.y=-50;
+    s.cx+=(s.x-s.cx)*s.progress*.03;
+    s.cy+=(s.y-s.cy)*s.progress*.03;
 
+    s.twinkle+=s.speed;
     const glow=Math.sin(s.twinkle)*.5+.5;
-    const alpha=s.o*(.6+glow*.4);
-    ctx.beginPath();ctx.arc(s.x,s.y,s.s,0,Math.PI*2);
-    const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.s*5);
+    const alpha=s.o*(.6+glow*.4)*(.3+s.progress*.7);
+    ctx.beginPath();ctx.arc(s.cx,s.cy,s.s,0,Math.PI*2);
+    const g=ctx.createRadialGradient(s.cx,s.cy,0,s.cx,s.cy,s.s*5);
     g.addColorStop(0,`rgba(255,255,255,${alpha})`);
     g.addColorStop(.5,`rgba(255,255,255,${alpha*.3})`);
     g.addColorStop(1,'transparent');
     ctx.fillStyle=g;ctx.fill();
+    // Connections
     for(let j=i+1;j<constStars.length;j++){
-      const dx2=s.x-constStars[j].x,dy2=s.y-constStars[j].y,dist=Math.sqrt(dx2*dx2+dy2*dy2);
-      if(dist<160){
-        const op=.08*(1-dist/160);
-        ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(constStars[j].x,constStars[j].y);
-        ctx.strokeStyle=`rgba(255,255,255,${op})`;
-        ctx.lineWidth=.6;ctx.stroke();
+      const dx=s.cx-constStars[j].cx,dy=s.cy-constStars[j].cy,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<120){
+        const conAlpha=Math.min(s.progress,constStars[j].progress)*.07*(1-dist/120);
+        ctx.beginPath();ctx.moveTo(s.cx,s.cy);ctx.lineTo(constStars[j].cx,constStars[j].cy);
+        ctx.strokeStyle=`rgba(255,255,255,${conAlpha})`;
+        ctx.lineWidth=.5;ctx.stroke();
       }
     }
   }
