@@ -1175,8 +1175,8 @@ const scrambleEl=document.getElementById('scramble');
 if(scrambleEl){
   const fx=new TextScramble(scrambleEl);let ci=0;
   const ph=['Building interactive digital experiences','17 • Self-taught • Nigerian','UI/UX • React • TypeScript • Tailwind','Pixel-perfect experiences with soul','Available for freelance & collaborations','Passionate about design & code','From Nigeria — building for the world','Turning complex into simple','Every pixel tells a story','Let\'s create something memorable'];
-  const next=()=>fx.setText(ph[ci]).then(()=>setTimeout(next,3200));ci=(ci+1)%ph.length;
-  setTimeout(()=>{fx.setText(ph[0]).then(()=>{ci=1;setTimeout(next,3200)})},2000);
+  const next=()=>{fx.setText(ph[ci]).then(()=>{ci=(ci+1)%ph.length;setTimeout(next,3000)})};
+  setTimeout(()=>{fx.setText(ph[0]).then(()=>{ci=1;setTimeout(next,3000)})},2000);
 }
 
 // ─── BACKGROUND PARTICLES (Yuna style) ───
