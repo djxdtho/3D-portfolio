@@ -1217,6 +1217,7 @@ function drawConstellations(ctx,w,h){
     s.cy+=(s.ty-s.cy)*.00042;
     if(mIn&&!mDown){const dx=s.cx-mP.x,dy=s.cy-mP.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<140){const f=1-dist/140;const push=3*f;s.cx+=dx/dist*push;s.cy+=dy/dist*push;}}
     if(mDown){const dx=mP.x-s.cx,dy=mP.y-s.cy,dist=Math.sqrt(dx*dx+dy*dy);if(dist<200){const f=1-dist/200;s.cx+=dx/dist*5*f;s.cy+=dy/dist*5*f;}}
+    if(s.cx<-80||s.cx>w+80||s.cy<-80||s.cy>h+80){s.cx=Math.random()*w;s.cy=Math.random()*h;s.tx=Math.random()*w;s.ty=Math.random()*h;}
     if(Math.abs(s.cx-s.tx)<3&&Math.abs(s.cy-s.ty)<3&&Math.random()<.008){s.tx=Math.random()*w;s.ty=Math.random()*h;}
     s.twinkle+=s.speed;
     const glow=Math.sin(s.twinkle)*.5+.5;
