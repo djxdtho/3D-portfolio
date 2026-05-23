@@ -1203,8 +1203,8 @@ let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{rs();},300)},{passive:true});
 
 // ─── Sphere Cycle ───
+const n=120;
 const constStars=[];
-const n=140;
 const phi=Math.PI*(3-Math.sqrt(5));
 for(let i=0;i<n;i++){
   const y=1-(i/(n-1))*2;
@@ -1222,13 +1222,23 @@ for(let i=0;i<n;i++){
   });
 }
 
+// Pre-rendered glow sprite (one-time cost)
+const glowSpr=document.createElement('canvas');
+glowSpr.width=64;glowSpr.height=64;
+const gc=glowSpr.getContext('2d');
+const grd=gc.createRadialGradient(32,32,0,32,32,32);
+grd.addColorStop(0,'rgba(255,255,255,1)');
+grd.addColorStop(.35,'rgba(255,255,255,.4)');
+grd.addColorStop(1,'rgba(255,255,255,0)');
+gc.fillStyle=grd;gc.fillRect(0,0,64,64);
+
 let cPhase='scatter',cTimer=0,rotA=0;
 let scatProg=0,formProg=0,accelProg=0,explProg=0;
 
 function drawConstellations(ctx,w,h){
   const cx=w/2,cy=h/2,baseR=Math.min(w,h)*.115;
 
-  // Phase transitions
+  // ── Phase machine ──
   if(cPhase==='scatter'){
     scatProg=Math.min(1,scatProg+.012);
     if(scatProg>=1){scatProg=0;cPhase='form';cTimer=0;}
@@ -1246,7 +1256,7 @@ function drawConstellations(ctx,w,h){
     if(t>=1){cPhase='orbit';cTimer=0;accelProg=0;}
   }
 
-  // Sphere state
+  // ── Sphere state ──
   const formEase=cPhase==='form'?1-Math.pow(1-formProg,3):1;
   const accel=accelProg<.5?2*accelProg*accelProg:1-Math.pow(-2*accelProg+2,2)/2;
   const explEase=1-Math.pow(1-explProg,2);
@@ -1255,24 +1265,24 @@ function drawConstellations(ctx,w,h){
   else if(cPhase==='form'){spd=.002*formEase;size=.2+formEase*.8;}
   else if(cPhase==='orbit'){spd=.006+accel*.044;size=1+accel*.7;}
   else if(cPhase==='explode'){spd=.05*(1-explEase);size=1.7-explEase*.6;}
-  else if(cPhase==='reform'){spd=.006;size=1;}
+  else {spd=.006;size=1;}
 
   const curR=baseR*size;
   rotA+=spd;
   const cosA=Math.cos(rotA),sinA=Math.sin(rotA);
 
-  // Init explosion targets
+  // ── Init explosion targets ──
   if(cPhase==='explode'&&cTimer===1){
     constStars.forEach(s=>{
       const ang=Math.atan2(s.z3,s.x3)+Math.random()*.6-.3;
       const elev=Math.asin(s.y3)+Math.random()*.2-.1;
-      const mag=150+Math.random()*400;
+      const mag=200+Math.random()*500;
       s.ex=cx+Math.cos(ang)*Math.cos(elev)*mag;
       s.ey=cy+Math.sin(elev)*mag;
     });
   }
 
-  // Position stars
+  // ── Position stars ──
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
     const x2=s.x3*cosA-s.z3*sinA;
@@ -1298,43 +1308,45 @@ function drawConstellations(ctx,w,h){
     }
   }
 
-  // Lines — one stroke per line with distance fade
-  const drawLines=
+  // ── Constellation lines (index-neighbor web) ──
+  const showLines=
     cPhase==='orbit'||
-    (cPhase==='form'&&formProg>.4)||
+    (cPhase==='form'&&formProg>.35)||
     (cPhase==='explode'&&explProg<.5);
-  if(drawLines){
-    const ld=cPhase==='orbit'?80:55;
-    for(let i=0;i<constStars.length;i+=2){
-      for(let j=i+2;j<constStars.length;j+=3){
+  if(showLines){
+    const maxD=cPhase==='orbit'?curR*1.8:curR*1.3;
+    const maxD2=maxD*maxD;
+    ctx.beginPath();
+    for(let i=0;i<n;i++){
+      for(let k=1;k<=3;k++){
+        const j=(i+k)%n;
         const dx=constStars[i].cx-constStars[j].cx;
         const dy=constStars[i].cy-constStars[j].cy;
-        const d=Math.sqrt(dx*dx+dy*dy);
-        if(d<ld){
-          ctx.beginPath();
+        if(dx*dx+dy*dy<maxD2){
           ctx.moveTo(constStars[i].cx,constStars[i].cy);
           ctx.lineTo(constStars[j].cx,constStars[j].cy);
-          ctx.strokeStyle=`rgba(255,255,255,${.04*(1-d/ld)})`;
-          ctx.lineWidth=.4;ctx.stroke();
         }
       }
     }
+    ctx.strokeStyle='rgba(255,255,255,.04)';
+    ctx.lineWidth=.4;ctx.stroke();
   }
 
-  // Stars with glow
+  // ── Stars (pre-rendered glow sprite + solid core) ──
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
     s.twinkle+=s.spd;
     const tw=Math.sin(s.twinkle)*.5+.5;
     const df=cPhase==='orbit'||cPhase==='explode'?1-Math.max(0,s.z3)*.3:1;
     const sz=s.s*df;
-    const al=s.o*(.4+tw*.6)*df;
-    const g=ctx.createRadialGradient(s.cx,s.cy,0,s.cx,s.cy,sz*4);
-    g.addColorStop(0,`rgba(255,255,255,${al})`);
-    g.addColorStop(.5,`rgba(255,255,255,${al*.3})`);
-    g.addColorStop(1,'transparent');
-    ctx.beginPath();ctx.arc(s.cx,s.cy,sz,0,Math.PI*2);
-    ctx.fillStyle=g;ctx.fill();
+    const al=s.o*(.3+tw*.7)*df;
+    const glowSize=sz*4;
+    ctx.globalAlpha=al;
+    ctx.drawImage(glowSpr,s.cx-glowSize,s.cy-glowSize,glowSize*2,glowSize*2);
+    ctx.globalAlpha=1;
+    ctx.beginPath();ctx.arc(s.cx,s.cy,sz*.5,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${Math.min(al*1.5,1)})`;
+    ctx.fill();
   }
 }
 
