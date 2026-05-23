@@ -1203,49 +1203,43 @@ let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{rs();constStars.length=0;const t=generateStarTargets(120,window.innerWidth,window.innerHeight);t.forEach(s=>constStars.push(s));constStars.forEach(s=>{s.cx=Math.random()*window.innerWidth;s.cy=Math.random()*window.innerHeight});constStarted=true;},300)},{passive:true});
 
 // ─── Constellation Stars — Form a 5-Pointed Star Shape ───
-// Generate target positions forming a 5-pointed star outline + fill
+// Generate target positions forming a 5-pointed star
 function generateStarTargets(count,w,h){
   const cx=w/2,cy=h/2;
-  const outerR=Math.min(w,h)*.3;
-  const innerR=outerR*.4;
+  const outerR=Math.min(w,h)*.28;
+  const innerR=outerR*.45;
   const pts=[];
+  // 10 points define the star hull (5 outer + 5 inner alternating)
+  const hull=[];
+  for(let i=0;i<10;i++){
+    const angle=(i*Math.PI/5)-Math.PI/2;
+    const r=i%2===0?outerR:innerR;
+    hull.push({x:cx+Math.cos(angle)*r,y:cy+Math.sin(angle)*r});
+  }
   for(let i=0;i<count;i++){
-    // Mix of outline and interior points
+    // Pick a random position along the star surface
+    const seg=Math.floor(Math.random()*10);
+    const a=hull[seg],b=hull[(seg+1)%10];
     const t=Math.random();
-    let angle,r;
-    if(t<.5){
-      // On the star outline
-      const spike=Math.floor(Math.random()*5);
-      const a1=(spike*2*Math.PI/5)-Math.PI/2;
-      const a2=((spike+1)*2*Math.PI/5)-Math.PI/2;
-      const mid=Math.random();
-      angle=a1+(a2-a1)*mid;
-      const isOuter=mid<.5;
-      r=isOuter?outerR*(.9+Math.random()*.1):innerR*(.9+Math.random()*.1);
-    } else {
-      // Random inside the star
-      const spike=Math.floor(Math.random()*5);
-      const a1=(spike*2*Math.PI/5)-Math.PI/2;
-      const a2=((spike+1)*2*Math.PI/5)-Math.PI/2;
-      angle=a1+(a2-a1)*Math.random();
-      r=innerR+(outerR-innerR)*Math.random();
-    }
-    // Add some noise
-    angle+=(Math.random()-.5)*.15;
-    r*=.95+Math.random()*.1;
+    const rawX=a.x+(b.x-a.x)*t,rawY=a.y+(b.y-a.y)*t;
+    // Push outward or inward from center for interior fill
+    const dx=rawX-cx,dy=rawY-cy;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const pull=Math.random()*.8+.2;
+    const fx=cx+dx*pull,fy=cy+dy*pull;
+    // Add slight noise
+    const noise=4;
     pts.push({
-      x:cx+Math.cos(angle)*r,
-      y:cy+Math.sin(angle)*r,
+      x:fx+(Math.random()-.5)*noise,
+      y:fy+(Math.random()-.5)*noise,
       s:.8+Math.random()*2.2,
       o:.1+Math.random()*.2,
       twinkle:Math.random()*Math.PI*2,
       speed:.003+Math.random()*.008,
-      // Current position starts random
       cx:Math.random()*w,
       cy:Math.random()*h,
-      // Animation progress
       progress:0,
-      delay:Math.random()*2
+      delay:Math.random()*2.5
     });
   }
   return pts;
