@@ -1205,6 +1205,7 @@ window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setT
 // ─── Sphere Cycle ───
 const n=120;
 const constStars=[];
+const starLinks=[];
 const phi=Math.PI*(3-Math.sqrt(5));
 for(let i=0;i<n;i++){
   const y=1-(i/(n-1))*2;
@@ -1220,6 +1221,14 @@ for(let i=0;i<n;i++){
     twinkle:Math.random()*Math.PI*2,
     spd:.003+Math.random()*.008,
   });
+  // Random connections per star (3-5 links)
+  const links=[];
+  const num=3+Math.floor(Math.random()*3);
+  while(links.length<num){
+    const j=Math.floor(Math.random()*n);
+    if(j!==i&&!links.includes(j))links.push(j);
+  }
+  starLinks.push(links);
 }
 
 // Pre-rendered glow sprite (one-time cost)
@@ -1270,6 +1279,8 @@ function drawConstellations(ctx,w,h){
   const curR=baseR*size;
   rotA+=spd;
   const cosA=Math.cos(rotA),sinA=Math.sin(rotA);
+  const tilt=Math.PI*.3;
+  const cosT=Math.cos(tilt),sinT=Math.sin(tilt);
 
   // ── Init explosion targets ──
   if(cPhase==='explode'&&cTimer===1){
@@ -1285,11 +1296,13 @@ function drawConstellations(ctx,w,h){
   // ── Position stars ──
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
-    const x2=s.x3*cosA-s.z3*sinA;
-    const z2=s.x3*sinA+s.z3*cosA;
+    const y1=s.y3*cosT-s.z3*sinT;
+    const z1=s.y3*sinT+s.z3*cosT;
+    const x2=s.x3*cosA-z1*sinA;
+    const z2=s.x3*sinA+z1*cosA;
     const sc=1/(1+z2*.12);
     const rx=cx+x2*curR*sc;
-    const ry=cy+s.y3*curR*sc;
+    const ry=cy+y1*curR*sc;
 
     if(cPhase==='scatter'){
       const t=1-Math.pow(1-scatProg,3);
@@ -1308,7 +1321,7 @@ function drawConstellations(ctx,w,h){
     }
   }
 
-  // ── Constellation lines (index-neighbor web) ──
+  // ── Random constellation lines ──
   const showLines=
     cPhase==='orbit'||
     (cPhase==='form'&&formProg>.35)||
@@ -1318,13 +1331,16 @@ function drawConstellations(ctx,w,h){
     const maxD2=maxD*maxD;
     ctx.beginPath();
     for(let i=0;i<n;i++){
-      for(let k=1;k<=3;k++){
-        const j=(i+k)%n;
-        const dx=constStars[i].cx-constStars[j].cx;
-        const dy=constStars[i].cy-constStars[j].cy;
-        if(dx*dx+dy*dy<maxD2){
-          ctx.moveTo(constStars[i].cx,constStars[i].cy);
-          ctx.lineTo(constStars[j].cx,constStars[j].cy);
+      const links=starLinks[i];
+      for(let k=0;k<links.length;k++){
+        const j=links[k];
+        if(j>i){
+          const dx=constStars[i].cx-constStars[j].cx;
+          const dy=constStars[i].cy-constStars[j].cy;
+          if(dx*dx+dy*dy<maxD2){
+            ctx.moveTo(constStars[i].cx,constStars[i].cy);
+            ctx.lineTo(constStars[j].cx,constStars[j].cy);
+          }
         }
       }
     }
@@ -1337,7 +1353,7 @@ function drawConstellations(ctx,w,h){
     const s=constStars[i];
     s.twinkle+=s.spd;
     const tw=Math.sin(s.twinkle)*.5+.5;
-    const df=cPhase==='orbit'||cPhase==='explode'?1-Math.max(0,s.z3)*.3:1;
+    const df=cPhase==='orbit'||cPhase==='explode'?1-Math.max(0,z2)*.3:1;
     const sz=s.s*df;
     const al=s.o*(.3+tw*.7)*df;
     const glowSize=sz*4;
