@@ -747,6 +747,8 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 .theme-dot:hover .tooltip{opacity:1}
 @media(max-width:768px){.theme-indicators{display:none}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('0RT6CTEgKh13HuZOX')</script>
 </head>
 <body>
 
@@ -1074,16 +1076,16 @@ footer p{font-size:.78rem;color:var(--text-muted)}
         </div>
       </div>
       <form class="contact-form reveal-right" id="contactForm">
-        <input type="text" placeholder="Your Name" required>
-        <input type="email" placeholder="Your Email" required>
-        <select required>
+        <input type="text" name="from_name" placeholder="Your Name" required>
+        <input type="email" name="from_email" placeholder="Your Email" required>
+        <select name="project_type" required>
           <option value="" disabled selected>Select a package</option>
           <option>Starter Website — ₦20,000</option>
           <option>Professional Website — ₦50,000 ★ Most Popular</option>
           <option>Premium Project — ₦150,000+</option>
           <option>Custom / Not Sure Yet</option>
         </select>
-        <textarea rows="4" placeholder="Tell me about your project — what do you need, what's your vision, what's your budget?" required></textarea>
+        <textarea name="message" rows="4" placeholder="Tell me about your project — what do you need, what's your vision, what's your budget?" required></textarea>
         <button class="btn" type="submit"><span>Send Message →</span></button>
       </form>
     </div>
@@ -1095,10 +1097,10 @@ footer p{font-size:.78rem;color:var(--text-muted)}
   <div class="footer-inner">
     <p>© 2026 <span style="background:linear-gradient(135deg,var(--grad-1),var(--grad-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600">AA Elements</span>. Crafted with curiosity by Abdurrahman Ali.</p>
     <div class="footer-links">
-      <a href="#" aria-label="GitHub">GitHub</a>
-      <a href="#" aria-label="Dribbble">Dribbble</a>
-      <a href="#" aria-label="Twitter">Twitter</a>
-      <a href="#" aria-label="LinkedIn">LinkedIn</a>
+      <a href="https://snapchat.com/add/djxdtho" target="_blank" aria-label="Snapchat">Snapchat</a>
+      <a href="https://github.com/djxdtho" target="_blank" aria-label="GitHub">GitHub</a>
+      <a href="https://instagram.com/dndloldesigner" target="_blank" aria-label="Instagram">Instagram</a>
+      <a href="tel:+2347025451230" aria-label="Phone">07025451230</a>
     </div>
   </div>
 </footer>
@@ -1437,8 +1439,16 @@ new IntersectionObserver(([e])=>{
 // ─── CONTACT FORM ───
 document.getElementById('contactForm').addEventListener('submit',function(e){
   e.preventDefault();const btn=this.querySelector('.btn');
-  btn.innerHTML='<span>✓ Message Sent!</span>';btn.style.pointerEvents='none';
-  setTimeout(()=>{btn.innerHTML='<span>Send Message →</span>';btn.style.pointerEvents='auto';this.reset();},3000);
+  const orig=btn.innerHTML;btn.innerHTML='<span>Sending...</span>';btn.style.pointerEvents='none';
+  emailjs.send('service_s878amk','template_73lepd9',{
+    from_name:this.from_name.value,from_email:this.from_email.value,project_type:this.project_type.value,message:this.message.value
+  }).then(()=>{
+    btn.innerHTML='<span>✓ Message Sent!</span>';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.pointerEvents='auto';this.reset();},3000);
+  }).catch(()=>{
+    btn.innerHTML='<span>✗ Failed. Try emailing directly.</span>';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.pointerEvents='auto';},3000);
+  });
 });
 
 // ─── OBSERVE STATIC REVEAL ELEMENTS ───
