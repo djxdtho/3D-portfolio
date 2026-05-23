@@ -1215,7 +1215,7 @@ for(let i=0;i<n;i++){
     x3:r*Math.cos(theta),y3:y,z3:r*Math.sin(theta),
     sx:Math.random()*window.innerWidth,
     sy:Math.random()*window.innerHeight,
-    cx:0,cy:0,
+    cx:0,cy:0,depth:0,
     s:.6+Math.random()*2,
     o:.12+Math.random()*.2,
     twinkle:Math.random()*Math.PI*2,
@@ -1303,6 +1303,7 @@ function drawConstellations(ctx,w,h){
     const sc=1/(1+z2*.12);
     const rx=cx+x2*curR*sc;
     const ry=cy+y1*curR*sc;
+    s.depth=z2;
 
     if(cPhase==='scatter'){
       const t=1-Math.pow(1-scatProg,3);
@@ -1353,7 +1354,7 @@ function drawConstellations(ctx,w,h){
     const s=constStars[i];
     s.twinkle+=s.spd;
     const tw=Math.sin(s.twinkle)*.5+.5;
-    const df=cPhase==='orbit'||cPhase==='explode'?1-Math.max(0,z2)*.3:1;
+    const df=cPhase==='orbit'||cPhase==='explode'?1-Math.max(0,s.depth)*.3:1;
     const sz=s.s*df;
     const al=s.o*(.3+tw*.7)*df;
     const glowSize=sz*4;
