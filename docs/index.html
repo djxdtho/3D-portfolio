@@ -1080,9 +1080,9 @@ footer p{font-size:.78rem;color:var(--text-muted)}
         <input type="email" name="from_email" placeholder="Your Email" required>
         <select name="project_type" required>
           <option value="" disabled selected>Select a package</option>
-          <option>Starter Website — ₦20,000</option>
-          <option>Professional Website — ₦50,000 ★ Most Popular</option>
-          <option>Premium Project — ₦150,000+</option>
+          <option>Starter Website — $120 (₦20,000)</option>
+          <option>Professional Website — $300 (₦50,000) ★ Most Popular</option>
+          <option>Premium Project — $900+ (₦150,000+)</option>
           <option>Custom / Not Sure Yet</option>
         </select>
         <textarea name="message" rows="4" placeholder="Tell me about your project — what do you need, what's your vision, what's your budget?" required></textarea>
@@ -1363,13 +1363,13 @@ services.forEach(s=>{
 
 // ─── PRICING ───
 const tiers=[
-  {name:'Starter',price:'₦20,000',dur:'one-time',popular:false,
+  {name:'Starter',usd:'$120',ngn:'₦20,000',dur:'one-time',popular:false,
     desc:'For individuals and micro businesses needing a clean, functional online presence — fast.',
     ft:['1-3 page static website','Mobile responsive design','Basic SEO setup','Contact form integration','1 round of revisions','Delivered in 3-5 days']},
-  {name:'Professional',price:'₦50,000',dur:'one-time',popular:true,
+  {name:'Professional',usd:'$300',ngn:'₦50,000',dur:'one-time',popular:true,
     desc:'For growing brands and small businesses needing a polished, full-featured website that stands out.',
     ft:['Up to 7 custom pages','Brand identity integration','CMS / blog setup','Performance optimized','Advanced SEO','3 rounds of revisions','Delivered in 1-2 weeks']},
-  {name:'Premium',price:'₦150,000',dur:'project-based',popular:false,
+  {name:'Premium',usd:'$900',ngn:'₦150,000',dur:'project-based',popular:false,
     desc:'For businesses ready to invest in a high-impact digital experience with full custom development.',
     ft:['Custom full-stack web app','E-commerce / payment integration','User authentication & dashboards','Database design & management','Analytics & performance tracking','Unlimited revisions','Ongoing support & maintenance']},
 ];
@@ -1377,7 +1377,11 @@ const pGrid=document.getElementById('pricingGrid');
 tiers.forEach(t=>{
   const c=document.createElement('div');
   c.className=`pricing-card glass-card reveal-scale${t.popular?' popular':''}`;
-  c.innerHTML=`<div class="pricing-tier">${t.name}</div><div class="pricing-price">${t.price}</div><div class="pricing-duration">${t.dur}</div><div class="pricing-desc">${t.desc}</div><ul class="pricing-features">${t.ft.map(f=>`<li>${f}</li>`).join('')}</ul><a href="#contact" class="btn btn-sm${t.popular?'':' btn-outline'}"><span>Get Started${t.popular?' ★':''}</span></a>`;
+  c.innerHTML=`<div class="pricing-tier">${t.name}</div><div class="pricing-price"><span class="price-usd">${t.usd}</span><span class="price-ngn">${t.ngn}</span></div><div class="pricing-duration">${t.dur}</div><div class="pricing-desc">${t.desc}</div><ul class="pricing-features">${t.ft.map(f=>`<li>${f}</li>`).join('')}</ul><a href="#contact" class="btn btn-sm${t.popular?'':' btn-outline'}"><span>Get Started${t.popular?' ★':''}</span></a>`;
+  const usdEl=c.querySelector('.price-usd'),ngnEl=c.querySelector('.price-ngn');
+  ngnEl.style.display='none';
+  c.addEventListener('mouseenter',()=>{usdEl.style.display='none';ngnEl.style.display='inline'});
+  c.addEventListener('mouseleave',()=>{usdEl.style.display='inline';ngnEl.style.display='none'});
   pGrid.appendChild(c);observeReveal(c);
 });
 
