@@ -1202,149 +1202,137 @@ document.addEventListener('mousemove',e=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{rs();},300)},{passive:true});
 
-// ─── Orbiting Sphere ───
-const cx=window.innerWidth/2, cy=window.innerHeight/2;
-let sphereRadius=Math.min(window.innerWidth,window.innerHeight)*.12;
-let rotSpeed=.004;
-let phase='forming'; // forming | orbiting | accelerating | exploding | reforming
-let cycleTimer=0;
-let explodePower=0;
-
-// Generate points on a sphere surface (Fibonacci sphere for even distribution)
+// ─── Orbiting Sphere (Smooth) ───
 const constStars=[];
-const n=180;
+const n=100;
 const phi=Math.PI*(3-Math.sqrt(5));
 for(let i=0;i<n;i++){
   const y=1-(i/(n-1))*2;
   const r=Math.sqrt(1-y*y);
   const theta=phi*i;
   constStars.push({
-    // 3D position on sphere
-    x3:r*Math.cos(theta),
-    y3:y,
-    z3:r*Math.sin(theta),
-    // 2D projected
+    x3:r*Math.cos(theta),y3:y,z3:r*Math.sin(theta),
     cx:0,cy:0,
-    // Scatter target
-    scX:Math.random()*window.innerWidth,
-    scY:Math.random()*window.innerHeight,
-    scZ:Math.random()*4+2,
-    // Visual
-    s:.8+Math.random()*2.2,
-    o:.1+Math.random()*.2,
+    hideX:Math.random()*window.innerWidth,
+    hideY:Math.random()*window.innerHeight,
+    expX:0,expY:0,
+    s:1+Math.random()*2,
+    o:.12+Math.random()*.18,
     twinkle:Math.random()*Math.PI*2,
-    spd:.003+Math.random()*.008,
+    spd:.004+Math.random()*.008,
   });
 }
 
-// Initial scatter
-let constPhase='scatter-init';
-let scatterProg=0;
-
-function explode(){
-  constPhase='exploding';
-  cycleTimer=0;
-  explodePower=1;
-  constStars.forEach(s=>{
-    const angle=Math.atan2(s.z3,s.x3);
-    const elevation=Math.asin(s.y3);
-    scX=s.cx+(Math.cos(angle)*Math.cos(elevation))*(100+Math.random()*200);
-    scY=s.cy+Math.sin(elevation)*(100+Math.random()*200);
-    scZ=2+Math.random()*3;
-  });
-}
+let phase='init';
+let phaseT=0;
+let rotAngle=0;
 
 function drawConstellations(ctx,w,h){
-  const baseR=Math.min(w,h)*.12;
+  const baseR=Math.min(w,h)*.1;
+  const cx=w/2,cy=h/2;
 
-  // Phase transitions
-  if(constPhase==='scatter-init'){
-    scatterProg+=.008;
-    if(scatterProg>=1){scatterProg=1;constPhase='forming';cycleTimer=0;}
-  } else if(constPhase==='forming'){
-    cycleTimer++;
-    if(cycleTimer>120){constPhase='orbiting';cycleTimer=0;rotSpeed=.004;}
-  } else if(constPhase==='orbiting'){
-    cycleTimer++;
-    if(cycleTimer>180){constPhase='accelerating';cycleTimer=0;}
-  } else if(constPhase==='accelerating'){
-    rotSpeed+=.0003;
-    sphereRadius=baseR+(Math.min(w,h)*.18-baseR)*Math.min(1,cycleTimer/200);
-    cycleTimer++;
-    if(cycleTimer>200){
-      explode();
-    }
-  } else if(constPhase==='exploding'){
-    explodePower+=.03;
-    cycleTimer++;
-    if(cycleTimer>100){
-      constPhase='reforming';
-      cycleTimer=0;
-      scatterProg=0;
-    }
-  } else if(constPhase==='reforming'){
-    scatterProg+=.008;
-    cycleTimer++;
-    if(scatterProg>=1){
-      scatterProg=1;
-      sphereRadius=baseR;
-      rotSpeed=.004;
-      constPhase='orbiting';
-      cycleTimer=0;
-    }
+  // Phase transitions with smooth overlap
+  switch(phase){
+  case 'init':
+    phaseT+=.015;
+    if(phaseT>=1){phaseT=1;phase='orbit';}
+    break;
+  case 'orbit':
+    phaseT+=.004;
+    if(phaseT>=1){phaseT=0;phase='explode';constStars.forEach(s=>{
+      const ang=Math.atan2(s.y3,s.x3)+Math.random()*.8-.4;
+      const elev=Math.asin(s.y3)+Math.random()*.3-.15;
+      const mag=80+Math.random()*250;
+      s.expX=cx+Math.cos(ang)*Math.cos(elev)*mag;
+      s.expY=cy+Math.sin(elev)*mag;
+    });}
+    break;
+  case 'explode':
+    phaseT+=.02;
+    if(phaseT>=1){phaseT=0;phase='reform';}
+    break;
+  case 'reform':
+    phaseT+=.012;
+    if(phaseT>=1){phaseT=0;phase='orbit';}
+    break;
   }
 
-  const rot=rotSpeed*cycleTimer;
+  // Smooth eases per phase
+  let easeInit, easeOrbitSpeed, easeRadius, easeExplode, easeReform;
+  let size=1,rotSpd=.006,orbitT=0;
+
+  if(phase==='init'){
+    easeInit=phaseT<.5?2*phaseT*phaseT:1-Math.pow(-2*phaseT+2,2)/2;
+    size=.2+easeInit*.8;
+    rotSpd=0;
+  } else if(phase==='orbit'){
+    easeOrbitSpeed=phaseT<.5?2*phaseT*phaseT:1-Math.pow(-2*phaseT+2,2)/2;
+    rotSpd=.006+easeOrbitSpeed*.04;
+    size=1+easeOrbitSpeed*.7;
+    orbitT=phaseT;
+  } else if(phase==='explode'){
+    easeExplode=phaseT<.5?2*phaseT*phaseT:1-Math.pow(-2*phaseT+2,2)/2;
+    size=1.7*(1-easeExplode*.4);
+    rotSpd=.046*(1-easeExplode);
+    orbitT=.75;
+  } else if(phase==='reform'){
+    easeReform=phaseT<.5?2*phaseT*phaseT:1-Math.pow(-2*phaseT+2,2)/2;
+    size=.3+easeReform*.7;
+    rotSpd=easeReform*.006;
+    orbitT=0;
+  }
+
+  const curR=baseR*size;
+  rotAngle+=rotSpd;
+  const cosA=Math.cos(rotAngle),sinA=Math.sin(rotAngle);
 
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
 
-    if(constPhase==='scatter-init'){
-      const t=scatterProg;
-      const easeT=1-Math.pow(1-t,3);
-      s.cx=s.scX*easeT+(w/2+s.x3*baseR)*(1-easeT);
-      s.cy=s.scY*easeT+(h/2+s.y3*baseR)*(1-easeT);
-    } else if(constPhase==='forming'){
-      const t=Math.min(1,cycleTimer/120);
-      const easeT=1-Math.pow(1-t,3);
-      s.cx+=(w/2+s.x3*sphereRadius-s.cx)*.04;
-      s.cy+=(h/2+s.y3*sphereRadius-s.cy)*.04;
-    } else if(constPhase==='exploding'){
-      s.cx+=(s.scX-s.cx)*explodePower*.04;
-      s.cy+=(s.scY-s.cy)*explodePower*.04;
-    } else if(constPhase==='reforming'){
-      const t=scatterProg;
-      const targetX=w/2+s.x3*sphereRadius;
-      const targetY=h/2+s.y3*sphereRadius;
-      s.cx+=(targetX-s.cx)*(.02+t*.04);
-      s.cy+=(targetY-s.cy)*(.02+t*.04);
-    } else {
-      // orbiting or accelerating - rotate sphere
-      const cosA=Math.cos(rot),sinA=Math.sin(rot);
-      const x2=s.x3*cosA-s.z3*sinA;
-      const z2=s.x3*sinA+s.z3*cosA;
-      const scale=1/(1+z2*.15);
-      s.cx=w/2+x2*sphereRadius*scale;
-      s.cy=h/2+s.y3*sphereRadius*scale;
+    // Sphere surface position (rotated)
+    const x2=s.x3*cosA-s.z3*sinA;
+    const z2=s.x3*sinA+s.z3*cosA;
+    const scale=1/(1+z2*.12);
+    const rx=cx+x2*curR*scale;
+    const ry=cy+s.y3*curR*scale;
+
+    // Blend between states based on current phase
+    if(phase==='init'){
+      const t=easeInit;
+      s.cx=s.hideX*(1-t)+rx*t;
+      s.cy=s.hideY*(1-t)+ry*t;
+    } else if(phase==='orbit'){
+      s.cx=rx;
+      s.cy=ry;
+    } else if(phase==='explode'){
+      s.cx=rx+(s.expX-rx)*easeExplode;
+      s.cy=ry+(s.expY-ry)*easeExplode;
+    } else if(phase==='reform'){
+      s.cx=s.expX+(rx-s.expX)*easeReform;
+      s.cy=s.expY+(ry-s.expY)*easeReform;
     }
 
     s.twinkle+=s.spd;
     const glow=Math.sin(s.twinkle)*.5+.5;
-    const alpha=s.o*(.5+glow*.5);
-    ctx.beginPath();ctx.arc(s.cx,s.cy,s.s,0,Math.PI*2);
-    const g=ctx.createRadialGradient(s.cx,s.cy,0,s.cx,s.cy,s.s*5);
-    g.addColorStop(0,`rgba(255,255,255,${alpha})`);
-    g.addColorStop(.5,`rgba(255,255,255,${alpha*.3})`);
-    g.addColorStop(1,'transparent');
-    ctx.fillStyle=g;ctx.fill();
-    // Connections
-    for(let j=i+1;j<constStars.length;j++){
-      const dx=s.cx-constStars[j].cx,dy=s.cy-constStars[j].cy,dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<90){
-        const ca=.05*(1-dist/90);
-        ctx.beginPath();ctx.moveTo(s.cx,s.cy);ctx.lineTo(constStars[j].cx,constStars[j].cy);
+    const alpha=s.o*(.4+glow*.6);
+    const sz=s.s*(.5+size*.3);
+    ctx.beginPath();ctx.arc(s.cx,s.cy,sz,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${alpha})`;
+    ctx.fill();
+  }
+
+  // Connections (skip every other for perf)
+  for(let i=0;i<constStars.length;i+=2){
+    for(let j=i+2;j<constStars.length;j+=2){
+      const dx=constStars[i].cx-constStars[j].cx;
+      const dy=constStars[i].cy-constStars[j].cy;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<100){
+        const ca=.04*(1-dist/100);
+        ctx.beginPath();ctx.moveTo(constStars[i].cx,constStars[i].cy);
+        ctx.lineTo(constStars[j].cx,constStars[j].cy);
         ctx.strokeStyle=`rgba(255,255,255,${ca})`;
-        ctx.lineWidth=.5;ctx.stroke();
+        ctx.lineWidth=.4;ctx.stroke();
       }
     }
   }
