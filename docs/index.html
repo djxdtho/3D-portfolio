@@ -1241,25 +1241,25 @@ grd.addColorStop(1,'rgba(255,255,255,0)');
 gc.fillStyle=grd;gc.fillRect(0,0,64,64);
 
 let cPhase='spread',cTimer=0,rotA=0;
-let formProg=0,accelProg=0,explProg=0;
+let formProg=0,accelProg=0,explProg=0,driftF=1;
 
 function drawConstellations(ctx,w,h){
   const cx=w/2,cy=h/2,baseR=Math.min(w,h)*.115;
 
   // ── Phase machine ──
   if(cPhase==='spread'){
-    cTimer++;
-    if(cTimer>=360){cTimer=0;cPhase='form';formProg=0;
+    cTimer++;driftF=1;
+    if(cTimer>=360){cTimer=0;cPhase='form';formProg=0;driftF=1;
       constStars.forEach(s=>{s.sx=s.cx;s.sy=s.cy;});}
   } else if(cPhase==='form'){
-    cTimer++;formProg=Math.min(1,cTimer/180);
-    if(formProg>=1){cPhase='orbit';cTimer=0;}
+    cTimer++;formProg=Math.min(1,cTimer/180);driftF=Math.max(0,driftF-.04);
+    if(formProg>=1){cPhase='orbit';cTimer=0;driftF=0;}
   } else if(cPhase==='orbit'){
-    cTimer++;accelProg=Math.min(1,cTimer/240);
-    if(accelProg>=1){cPhase='explode';cTimer=0;}
+    cTimer++;accelProg=Math.min(1,cTimer/240);driftF=0;
+    if(accelProg>=1){cPhase='explode';cTimer=0;driftF=0;}
   } else if(cPhase==='explode'){
-    cTimer++;explProg=Math.min(1,cTimer/80);
-    if(explProg>=1){cPhase='spread';cTimer=0;
+    cTimer++;explProg=Math.min(1,cTimer/80);driftF=0;
+    if(explProg>=1){cPhase='spread';cTimer=0;driftF=1;
       constStars.forEach(s=>{s.sx=Math.random()*w;s.sy=Math.random()*h;});}
   }
 
@@ -1305,11 +1305,13 @@ function drawConstellations(ctx,w,h){
     if(cPhase==='spread'){
       s.cx+=(s.sx-s.cx)*.025;
       s.cy+=(s.sy-s.cy)*.025;
-      s.cx+=Math.sin(s.twinkle*2+i)*.2;
-      s.cy+=Math.cos(s.twinkle*1.3+i*.7)*.2;
+      s.cx+=Math.sin(s.twinkle*2+i)*.2*driftF;
+      s.cy+=Math.cos(s.twinkle*1.3+i*.7)*.2*driftF;
     } else if(cPhase==='form'){
       s.cx=s.sx+(rx-s.sx)*formEase;
       s.cy=s.sy+(ry-s.sy)*formEase;
+      s.cx+=Math.sin(s.twinkle*2+i)*.2*driftF;
+      s.cy+=Math.cos(s.twinkle*1.3+i*.7)*.2*driftF;
     } else if(cPhase==='explode'){
       s.cx=rx+(s.ex-rx)*explEase;
       s.cy=ry+(s.ey-ry)*explEase;
