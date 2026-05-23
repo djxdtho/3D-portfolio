@@ -67,30 +67,23 @@ a{text-decoration:none;color:inherit}
 }
 .blob{
   position:fixed;pointer-events:none;z-index:0;
-  border-radius:50%;filter:blur(100px);
-  opacity:.12;animation:blobFloat 25s ease-in-out infinite;
+  border-radius:50%;filter:blur(80px);
+  opacity:.1;animation:blobFloat 25s ease-in-out infinite;
+  will-change:transform;
 }
-.blob:nth-child(2){width:500px;height:500px;background:var(--grad-1);top:-10%;left:-10%;animation-delay:0s}
-.blob:nth-child(3){width:400px;height:400px;background:var(--grad-2);bottom:-10%;right:-10%;animation-delay:-6s}
-.blob:nth-child(4){width:350px;height:350px;background:var(--grad-1);top:40%;left:60%;animation-delay:-12s;mix-blend-mode:screen}
-.blob:nth-child(5){width:250px;height:250px;background:var(--grad-2);top:60%;left:20%;animation-delay:-18s}
-.blob:nth-child(6){width:300px;height:300px;background:var(--grad-1);bottom:30%;left:50%;animation-delay:-9s}
+.blob:nth-child(2){width:400px;height:400px;background:var(--grad-1);top:-15%;left:-10%;animation-delay:0s}
+.blob:nth-child(3){width:350px;height:350px;background:var(--grad-2);bottom:-15%;right:-10%;animation-delay:-8s}
 @keyframes blobFloat{
   0%,100%{transform:translate(0,0) scale(1)}
   25%{transform:translate(80px,-50px) scale(1.15)}
   50%{transform:translate(-40px,70px) scale(.9)}
   75%{transform:translate(50px,40px) scale(1.08)}
 }
-.noise-overlay{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  opacity:.03;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat:repeat;background-size:256px 256px;
-}
 .music-note{
   position:fixed;pointer-events:none;z-index:0;
-  font-size:1.4rem;color:rgba(255,255,255,.03);
-  animation:noteFloat 20s linear infinite;
+  font-size:1.2rem;color:rgba(255,255,255,.025);
+  animation:noteFloat 30s linear infinite;
+  will-change:transform;
 }
 @keyframes noteFloat{
   0%{transform:translateY(110vh) rotate(0deg);opacity:0}
@@ -156,6 +149,7 @@ nav{
   border-radius:100px;
   box-shadow:0 8px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06),inset 0 0 60px rgba(255,255,255,.015);
   transition:background .4s,border-color .4s,box-shadow .4s;
+  will-change:transform;
 }
 nav .glass-shine{
   position:absolute;inset:0;border-radius:100px;overflow:hidden;pointer-events:none;z-index:-1;
@@ -233,6 +227,7 @@ body{cursor:auto}
 #bg-canvas{
   position:fixed;inset:0;z-index:1;
   width:100%;height:100%;pointer-events:none;
+  will-change:transform;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -435,12 +430,6 @@ section{
 .skill-card:hover::before{opacity:1}
 .skill-card:hover{transform:translateY(-5px) scale(1.03);border-color:var(--grad-1);box-shadow:0 8px 40px rgba(0,212,255,.1)}
 .glass-card{position:relative;overflow:hidden}
-.glass-card::after{
-  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.02) 45%,rgba(255,255,255,.03) 50%,rgba(255,255,255,.02) 55%,transparent 70%);
-  animation:cardShine 8s ease-in-out infinite;z-index:0;
-}
-@keyframes cardShine{0%{transform:translateX(-100%)}40%{transform:translateX(100%)}100%{transform:translateX(100%)}}
 .skill-card .icon{font-size:1.6rem;margin-bottom:6px;position:relative;z-index:1;display:inline-block;transition:transform .3s}
 .skill-card:hover .icon{animation:iconPop .4s cubic-bezier(.68,-.55,.27,1.55) forwards}
 .skill-card:nth-child(1):hover .icon{animation:iconSpin .6s ease forwards}
@@ -708,20 +697,13 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 
 <!-- Ambient Backgrounds -->
 <div class="ambient-grid"></div>
-<div class="blob"></div><div class="blob"></div><div class="blob"></div><div class="blob"></div><div class="blob"></div>
-<div class="noise-overlay"></div>
+<div class="blob"></div><div class="blob"></div>
 
 <!-- Floating Music Notes -->
-<div class="music-note" style="left:3%;animation-delay:0s">♩</div>
-<div class="music-note" style="left:12%;animation-delay:-3s">♪</div>
-<div class="music-note" style="left:22%;animation-delay:-6s">♫</div>
-<div class="music-note" style="left:35%;animation-delay:-9s">♬</div>
-<div class="music-note" style="left:48%;animation-delay:-2s">♩</div>
-<div class="music-note" style="left:58%;animation-delay:-5s">♪</div>
-<div class="music-note" style="left:68%;animation-delay:-8s">♫</div>
-<div class="music-note" style="left:78%;animation-delay:-11s">♬</div>
-<div class="music-note" style="left:88%;animation-delay:-4s">♩</div>
-<div class="music-note" style="left:95%;animation-delay:-7s">♪</div>
+<div class="music-note" style="left:10%;animation-delay:0s">♩</div>
+<div class="music-note" style="left:40%;animation-delay:-6s">♪</div>
+<div class="music-note" style="left:65%;animation-delay:-3s">♫</div>
+<div class="music-note" style="left:85%;animation-delay:-9s">♬</div>
 
 <!-- Skeleton -->
 <div id="skeleton">
@@ -1143,17 +1125,21 @@ if(scrambleEl){
 const bgCanvas=document.getElementById('bg-canvas'),bctx=bgCanvas.getContext('2d');
 let p=[],mP={x:0,y:0},mIn=false;
 function rs(){bgCanvas.width=window.innerWidth;bgCanvas.height=window.innerHeight}
-rs();window.addEventListener('resize',rs);
+rs();
 class Pt{
   constructor(){this.r()}
-  r(){this.x=Math.random()*bgCanvas.width;this.y=Math.random()*bgCanvas.height;this.s=Math.random()*2.5+.5;this.sx=(Math.random()-.5)*.25;this.sy=(Math.random()-.5)*.25;this.o=Math.random()*.25+.05}
+  r(){this.x=Math.random()*bgCanvas.width;this.y=Math.random()*bgCanvas.height;this.s=Math.random()*2+.5;this.sx=(Math.random()-.5)*.2;this.sy=(Math.random()-.5)*.2;this.o=Math.random()*.2+.04}
   u(){this.x+=this.sx;this.y+=this.sy;if(this.x<0||this.x>bgCanvas.width)this.sx*=-1;if(this.y<0||this.y>bgCanvas.height)this.sy*=-1}
   d(){bctx.beginPath();bctx.arc(this.x,this.y,this.s,0,Math.PI*2);bctx.fillStyle=`rgba(255,255,255,${this.o})`;bctx.fill()}
 }
-for(let i=0;i<120;i++)p.push(new Pt());
-bgCanvas.addEventListener('mousemove',e=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true});
-bgCanvas.addEventListener('mouseleave',()=>mIn=false);
+for(let i=0;i<50;i++)p.push(new Pt());
+bgCanvas.addEventListener('mousemove',e=>{cancelAnimationFrame(rafId);rafId=requestAnimationFrame(()=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true})},{passive:true});
+bgCanvas.addEventListener('mouseleave',()=>mIn=false,{passive:true});
 
+let resizeTimer;
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(rs,200)},{passive:true});
+
+let rafId;
 function aBg(){
   bctx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
   const t=themes[currentTheme];
@@ -1163,15 +1149,11 @@ function aBg(){
   p.forEach(pt=>{pt.u();pt.d()});
   for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){
     const dx=p[i].x-p[j].x,dy=p[i].y-p[j].y,dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<130){bctx.beginPath();bctx.moveTo(p[i].x,p[i].y);bctx.lineTo(p[j].x,p[j].y);bctx.strokeStyle=`rgba(255,255,255,${.06*(1-dist/130)})`;bctx.lineWidth=.5;bctx.stroke()}
+    if(dist<100){bctx.beginPath();bctx.moveTo(p[i].x,p[i].y);bctx.lineTo(p[j].x,p[j].y);bctx.strokeStyle=`rgba(255,255,255,${.05*(1-dist/100)})`;bctx.lineWidth=.5;bctx.stroke()}
   }
   requestAnimationFrame(aBg);
 }
 aBg();
-
-
-
-
 
 // ─── REVEAL HELPER ───
 function observeReveal(el){
@@ -1197,21 +1179,23 @@ navLinks.forEach(a=>{
   const el=document.getElementById(id);
   if(el)navSections.push({id,el,link:a});
 });
+let ticking=false;
 document.addEventListener('scroll',()=>{
-  const n=document.querySelector('nav');
-  const st=window.scrollY;
-  if(st>80){n.style.background='rgba(14,14,14,.85)';n.style.boxShadow='0 8px 40px rgba(0,0,0,.5)'}
-  else{n.style.background='var(--glass-bg)';n.style.boxShadow='0 8px 32px var(--glass-shadow)'}
-  let current='';
-  navSections.forEach(({id,el})=>{
-    const top=el.offsetTop-200;
-    const bottom=top+el.offsetHeight;
-    if(st>=top&&st<bottom)current=id;
-  });
-  navLinks.forEach(a=>{
-    a.classList.toggle('active',a.getAttribute('href')==='#'+current);
-  });
-});
+  if(!ticking){ticking=true;requestAnimationFrame(()=>{
+    const n=document.querySelector('nav');
+    const st=window.scrollY;
+    if(st>80){n.style.background='rgba(14,14,14,.85)';n.style.boxShadow='0 8px 40px rgba(0,0,0,.5)'}
+    else{n.style.background='var(--glass-bg)';n.style.boxShadow='0 8px 32px var(--glass-shadow)'}
+    let current='';
+    navSections.forEach(({id,el})=>{
+      const top=el.offsetTop-200;
+      const bottom=top+el.offsetHeight;
+      if(st>=top&&st<bottom)current=id;
+    });
+    navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+current));
+    ticking=false;
+  })}
+},{passive:true});
 
 // ─── SKILLS ───
 const skills=[
