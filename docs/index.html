@@ -1200,11 +1200,11 @@ for(let i=0;i<50;i++)p.push(new Pt());
 document.addEventListener('mousemove',e=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true},{passive:true});
 
 let resizeTimer;
-window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{rs();constStars.length=0;const t=generateStarTargets(120,window.innerWidth,window.innerHeight);t.forEach(s=>constStars.push(s));constStars.forEach(s=>{s.cx=Math.random()*window.innerWidth;s.cy=Math.random()*window.innerHeight});constStarted=true;},300)},{passive:true});
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{rs();morphToShape(shapeIdx);},300)},{passive:true});
 
 // ─── Constellation Shapes ───
 function starShape(count,w,h){
-  const cx=w/2,cy=h/2,outerR=Math.min(w,h)*.28,innerR=outerR*.45;
+  const cx=w/2,cy=h/2,outerR=Math.min(w,h)*.26,innerR=outerR*.45;
   const hull=[];
   for(let i=0;i<10;i++){
     const a=(i*Math.PI/5)-Math.PI/2;
@@ -1217,23 +1217,23 @@ function starShape(count,w,h){
     const t=Math.random();
     const rawX=hull[seg].x+(hull[(seg+1)%10].x-hull[seg].x)*t;
     const rawY=hull[seg].y+(hull[(seg+1)%10].y-hull[seg].y)*t;
-    const pull=.2+Math.random()*.8;
-    pts.push({x:cx+(rawX-cx)*pull+(Math.random()-.5)*3,y:cy+(rawY-cy)*pull+(Math.random()-.5)*3});
+    const pull=.15+Math.random()*.85;
+    pts.push({x:cx+(rawX-cx)*pull+(Math.random()-.5)*2,y:cy+(rawY-cy)*pull+(Math.random()-.5)*2});
   }
   return pts;
 }
 function ringShape(count,w,h){
-  const cx=w/2,cy=h/2,r=Math.min(w,h)*.25;
+  const cx=w/2,cy=h/2,r=Math.min(w,h)*.24;
   const pts=[];
   for(let i=0;i<count;i++){
-    const a=Math.random()*Math.PI*2;
-    const rad=r+Math.cos(i*7)*r*.15+(Math.random()-.5)*r*.1;
+    const a=(i/count)*Math.PI*2;
+    const rad=r+(Math.random()-.5)*r*.12;
     pts.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad});
   }
   return pts;
 }
 function diamondShape(count,w,h){
-  const cx=w/2,cy=h/2,s=Math.min(w,h)*.3;
+  const cx=w/2,cy=h/2,s=Math.min(w,h)*.28;
   const hull=[{x:cx,y:cy-s},{x:cx+s,y:cy},{x:cx,y:cy+s},{x:cx-s,y:cy}];
   const pts=[];
   for(let i=0;i<count;i++){
@@ -1241,45 +1241,39 @@ function diamondShape(count,w,h){
     const t=Math.random();
     const rawX=hull[seg].x+(hull[(seg+1)%4].x-hull[seg].x)*t;
     const rawY=hull[seg].y+(hull[(seg+1)%4].y-hull[seg].y)*t;
-    const pull=.2+Math.random()*.8;
-    pts.push({x:cx+(rawX-cx)*pull+(Math.random()-.5)*3,y:cy+(rawY-cy)*pull+(Math.random()-.5)*3});
+    const pull=.15+Math.random()*.85;
+    pts.push({x:cx+(rawX-cx)*pull+(Math.random()-.5)*2,y:cy+(rawY-cy)*pull+(Math.random()-.5)*2});
   }
   return pts;
 }
 function spiralShape(count,w,h){
-  const cx=w/2,cy=h/2,maxR=Math.min(w,h)*.3;
+  const cx=w/2,cy=h/2,maxR=Math.min(w,h)*.28;
   const pts=[];
   for(let i=0;i<count;i++){
     const t=i/count;
-    const a=t*Math.PI*6;
-    const r=t*maxR+(Math.random()-.5)*maxR*.08;
-    pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
+    const a=t*Math.PI*8;
+    const r=t*maxR;
+    pts.push({x:cx+Math.cos(a+Math.sin(t*10)*.3)*r,y:cy+Math.sin(a+Math.sin(t*10)*.3)*r});
   }
   return pts;
 }
 function triangleShape(count,w,h){
-  const cx=w/2,cy=h/2,s=Math.min(w,h)*.28;
-  const hull=[{x:cx,y:cy-s},{x:cx+s*Math.cos(Math.PI/6),y:cy+s*Math.sin(Math.PI/6)},{x:cx-s*Math.cos(Math.PI/6),y:cy+s*Math.sin(Math.PI/6)}];
+  const cx=w/2,cy=h/2,s=Math.min(w,h)*.26;
+  const hull=[{x:cx,y:cy-s},{x:cx+s*.866,y:cy+s*.5},{x:cx-s*.866,y:cy+s*.5}];
   const pts=[];
   for(let i=0;i<count;i++){
     const seg=Math.floor(Math.random()*3);
     const t=Math.random();
     const rawX=hull[seg].x+(hull[(seg+1)%3].x-hull[seg].x)*t;
     const rawY=hull[seg].y+(hull[(seg+1)%3].y-hull[seg].y)*t;
-    const pull=.2+Math.random()*.8;
-    pts.push({x:cx+(rawX-cx)*pull+(Math.random()-.5)*3,y:cy+(rawY-cy)*pull+(Math.random()-.5)*3});
+    const pull=.15+Math.random()*.85;
+    pts.push({x:cx+(rawX-cx)*pull+(Math.random()-.5)*2,y:cy+(rawY-cy)*pull+(Math.random()-.5)*2});
   }
   return pts;
 }
 
 const shapeFns=[starShape,ringShape,diamondShape,spiralShape,triangleShape,starShape];
-const shapeNames=['Star','Ring','Diamond','Spiral','Triangle','Star'];
 let shapeIdx=0;
-let constPhase='forming'; // 'forming' | 'hold' | 'scatter'
-let constTimer=0;
-const HOLD_DURATION=3000;
-const SCATTER_DURATION=2000;
-const FORM_DURATION=4000;
 
 const constStars=[];
 for(let i=0;i<120;i++){
@@ -1291,87 +1285,47 @@ for(let i=0;i<120;i++){
     o:.1+Math.random()*.2,
     twinkle:Math.random()*Math.PI*2,
     speed:.003+Math.random()*.008,
-    progress:0,
-    delay:Math.random()*.8
   });
 }
 
-function scatterStars(){
-  constStars.forEach(s=>{
-    s.tx=Math.random()*window.innerWidth;
-    s.ty=Math.random()*window.innerHeight;
-    s.progress=0;
-    s.delay=Math.random()*.3;
-  });
-  constPhase='scatter';
-  constTimer=0;
-}
-
-function startFormShape(idx){
+function morphToShape(idx){
   const t=shapeFns[idx](120,window.innerWidth,window.innerHeight);
   constStars.forEach((s,i)=>{
     s.tx=t[i].x;
     s.ty=t[i].y;
-    s.progress=0;
-    s.delay=Math.random()*.8;
   });
-  constPhase='forming';
-  constTimer=0;
+  shapeIdx=idx;
 }
 
-function drawConstellations(ctx,w,h){
-  if(constPhase==='scatter'){
-    constTimer+=16;
-    let allDone=true;
-    constStars.forEach(s=>{
-      if(s.delay>0)s.delay-=.016;
-      else if(s.progress<1){s.progress+=.008;if(s.progress>1)s.progress=1;}
-      s.cx+=(s.tx-s.cx)*s.progress*.04;
-      s.cy+=(s.ty-s.cy)*s.progress*.04;
-      if(s.progress<1)allDone=false;
-    });
-    if(allDone&&constTimer>SCATTER_DURATION){
-      shapeIdx=(shapeIdx+1)%shapeFns.length;
-      startFormShape(shapeIdx);
-    }
-  } else if(constPhase==='forming'){
-    constTimer+=16;
-    let allDone=true;
-    constStars.forEach(s=>{
-      if(s.delay>0)s.delay-=.016;
-      else if(s.progress<1){s.progress+=.005;if(s.progress>1)s.progress=1;}
-      s.cx+=(s.tx-s.cx)*s.progress*.03;
-      s.cy+=(s.ty-s.cy)*s.progress*.03;
-      if(s.progress<1)allDone=false;
-    });
-    if(allDone&&constTimer>FORM_DURATION){
-      constPhase='hold';
-      constTimer=0;
-    }
-  } else if(constPhase==='hold'){
-    constTimer+=16;
-    if(constTimer>HOLD_DURATION){
-      scatterStars();
-    }
-  }
+// Morph speed — smooth continuous transition
+const MORPH_SPEED=.012;
 
+function drawConstellations(ctx,w,h){
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
+    // Continuously morph toward target
+    s.cx+=(s.tx-s.cx)*MORPH_SPEED;
+    s.cy+=(s.ty-s.cy)*MORPH_SPEED;
+    // If close enough, pick a new random wander point to keep slight movement
+    if(Math.abs(s.cx-s.tx)<2&&Math.abs(s.cy-s.ty)<2&&Math.random()<.005){
+      s.tx+=Math.random()*8-4;
+      s.ty+=Math.random()*8-4;
+    }
+
     s.twinkle+=s.speed;
     const glow=Math.sin(s.twinkle)*.5+.5;
-    const prog=constPhase==='hold'?1:Math.min(1,s.progress+.2);
-    const alpha=s.o*(.5+glow*.5)*(.2+prog*.8);
+    const alpha=s.o*(.5+glow*.5);
     ctx.beginPath();ctx.arc(s.cx,s.cy,s.s,0,Math.PI*2);
     const g=ctx.createRadialGradient(s.cx,s.cy,0,s.cx,s.cy,s.s*5);
     g.addColorStop(0,`rgba(255,255,255,${alpha})`);
     g.addColorStop(.5,`rgba(255,255,255,${alpha*.3})`);
     g.addColorStop(1,'transparent');
     ctx.fillStyle=g;ctx.fill();
+    // Always draw connections based on current proximity
     for(let j=i+1;j<constStars.length;j++){
       const dx=s.cx-constStars[j].cx,dy=s.cy-constStars[j].cy,dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<100){
-        const pa=constPhase==='hold'?1:Math.min(s.progress,constStars[j].progress);
-        const ca=pa*.06*(1-dist/100);
+      if(dist<110){
+        const ca=.055*(1-dist/110);
         ctx.beginPath();ctx.moveTo(s.cx,s.cy);ctx.lineTo(constStars[j].cx,constStars[j].cy);
         ctx.strokeStyle=`rgba(255,255,255,${ca})`;
         ctx.lineWidth=.5;ctx.stroke();
@@ -1380,8 +1334,17 @@ function drawConstellations(ctx,w,h){
   }
 }
 
-// Start forming the first shape
-setTimeout(()=>startFormShape(0),1500);
+// Cycle shapes on a timer
+let shapeTimer=0;
+setInterval(()=>{
+  shapeTimer++;
+  if(shapeTimer%6===0){
+    morphToShape((shapeIdx+1)%shapeFns.length);
+  }
+},1000);
+
+// Start with star shape after short delay
+setTimeout(()=>morphToShape(0),500);
 
 let rafId;
 function aBg(){
