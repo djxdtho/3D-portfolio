@@ -28,9 +28,10 @@
   --accent3: #343434;
   --nav-h: 72px;
   --radius: 16px;
-  --glass-bg: rgba(20,20,20,0.62);
-  --glass-border: rgba(255,255,255,0.07);
+  --glass-bg: rgba(20,20,20,0.58);
+  --glass-border: rgba(255,255,255,0.08);
   --glass-shadow: rgba(0,0,0,0.45);
+  --glass-shine: rgba(255,255,255,0.03);
   --grad-1: #00d4ff;
   --grad-2: #5b0fbe;
   --grad-color: rgba(0,212,255,0.15);
@@ -153,9 +154,18 @@ nav{
   -webkit-backdrop-filter:blur(32px) saturate(1.6);
   border:1px solid rgba(255,255,255,.08);
   border-radius:100px;
-  box-shadow:0 8px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06),inset 0 0 40px rgba(255,255,255,.02);
+  box-shadow:0 8px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06),inset 0 0 60px rgba(255,255,255,.015);
   transition:background .4s,border-color .4s,box-shadow .4s;
 }
+nav .glass-shine{
+  position:absolute;inset:0;border-radius:100px;overflow:hidden;pointer-events:none;z-index:-1;
+}
+nav .glass-shine::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.04) 45%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.04) 55%,transparent 70%);
+  animation:glassSweep 6s ease-in-out infinite;
+}
+@keyframes glassSweep{0%{transform:translateX(-100%)}60%{transform:translateX(100%)}100%{transform:translateX(100%)}}
 nav::after{
   content:'';position:absolute;inset:0;border-radius:100px;
   background:linear-gradient(135deg,transparent 40%,var(--grad-1),var(--grad-2),transparent 60%);
@@ -195,6 +205,8 @@ nav .logo{
   background:linear-gradient(135deg,var(--grad-color),var(--grad-color2));
   opacity:0;transition:opacity .35s;
 }
+.nav-links a.active::before{opacity:1}
+.nav-links a.active{color:#fff}
 .nav-links a:hover::before{opacity:1}
 .nav-links a:hover{color:#fff}
 .menu-toggle{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none}
@@ -412,7 +424,8 @@ section{
 }
 .skill-card{
   padding:18px 12px;
-  background:var(--glass-bg);backdrop-filter:blur(12px);
+  background:rgba(20,20,20,0.5);backdrop-filter:blur(16px) saturate(1.4);
+  -webkit-backdrop-filter:blur(16px) saturate(1.4);
   border:1px solid var(--glass-border);
   border-radius:var(--radius);text-align:center;
   transition:all .4s cubic-bezier(.22,1,.36,1);
@@ -421,6 +434,13 @@ section{
 .skill-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--grad-color),var(--grad-color2));opacity:0;transition:opacity .4s}
 .skill-card:hover::before{opacity:1}
 .skill-card:hover{transform:translateY(-5px) scale(1.03);border-color:var(--grad-1);box-shadow:0 8px 40px rgba(0,212,255,.1)}
+.glass-card{position:relative;overflow:hidden}
+.glass-card::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.02) 45%,rgba(255,255,255,.03) 50%,rgba(255,255,255,.02) 55%,transparent 70%);
+  animation:cardShine 8s ease-in-out infinite;z-index:0;
+}
+@keyframes cardShine{0%{transform:translateX(-100%)}40%{transform:translateX(100%)}100%{transform:translateX(100%)}}
 .skill-card .icon{font-size:1.6rem;margin-bottom:6px;position:relative;z-index:1;display:inline-block;transition:transform .3s}
 .skill-card:hover .icon{animation:iconPop .4s cubic-bezier(.68,-.55,.27,1.55) forwards}
 .skill-card:nth-child(1):hover .icon{animation:iconSpin .6s ease forwards}
@@ -523,7 +543,8 @@ section{
 }
 .pricing-card{
   position:relative;
-  background:var(--glass-bg);backdrop-filter:blur(16px);
+  background:rgba(20,20,20,0.5);backdrop-filter:blur(20px) saturate(1.4);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);
   border:1px solid var(--glass-border);
   border-radius:24px;padding:40px 28px 32px;
   transition:all .4s cubic-bezier(.22,1,.36,1);
@@ -565,7 +586,7 @@ section{
    PROCESS
    ═══════════════════════════════════════════════════ */
 .process-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:40px}
-.process-step{text-align:center;padding:36px 20px;background:var(--glass-bg);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);transition:all .4s cubic-bezier(.22,1,.36,1);position:relative}
+.process-step{text-align:center;padding:36px 20px;background:rgba(20,20,20,0.5);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border:1px solid var(--glass-border);border-radius:var(--radius);transition:all .4s cubic-bezier(.22,1,.36,1);position:relative}
 .process-step:hover{transform:translateY(-6px);border-color:var(--grad-1);box-shadow:0 8px 30px rgba(0,212,255,.06)}
 .process-step .step-num{width:48px;height:48px;line-height:48px;border-radius:50%;background:linear-gradient(135deg,var(--grad-color),var(--grad-color2));border:1px solid var(--glass-border);font-size:.85rem;font-weight:700;margin:0 auto 16px;font-family:'Space Grotesk',sans-serif}
 .process-step h4{font-size:.95rem;font-weight:600;margin-bottom:8px}
@@ -595,7 +616,7 @@ section{
    TESTIMONIALS
    ═══════════════════════════════════════════════════ */
 .testimonial-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
-.testimonial-card{padding:28px;border-radius:var(--radius);background:var(--glass-bg);backdrop-filter:blur(12px);border:1px solid var(--glass-border);transition:all .4s cubic-bezier(.22,1,.36,1)}
+.testimonial-card{padding:28px;border-radius:var(--radius);background:rgba(20,20,20,0.5);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border:1px solid var(--glass-border);transition:all .4s cubic-bezier(.22,1,.36,1)}
 .testimonial-card:hover{transform:translateY(-5px);border-color:var(--grad-1);box-shadow:0 8px 30px rgba(0,212,255,.06)}
 .testimonial-card .stars{color:#f0b429;font-size:.8rem;margin-bottom:14px;letter-spacing:2px}
 .testimonial-card blockquote{font-size:.85rem;color:#bbb;line-height:1.7;font-style:italic;margin-bottom:16px}
@@ -628,7 +649,7 @@ section{
    ═══════════════════════════════════════════════════ */
 .contact-wrap{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:40px}
 .contact-info{display:flex;flex-direction:column;gap:14px}
-.contact-item{display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--glass-bg);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:12px;transition:all .35s cubic-bezier(.22,1,.36,1)}
+.contact-item{display:flex;align-items:center;gap:16px;padding:16px 20px;background:rgba(20,20,20,0.5);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border:1px solid var(--glass-border);border-radius:12px;transition:all .35s cubic-bezier(.22,1,.36,1)}
 .contact-item:hover{border-color:var(--grad-1);box-shadow:0 0 30px var(--grad-color);transform:translateX(6px)}
 .contact-item .ci-icon{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--grad-color),var(--grad-color2));display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
 .contact-item .ci-text{font-size:.85rem}
@@ -732,6 +753,7 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 
 <!-- ═══ NAVBAR ═══ -->
 <nav>
+  <div class="glass-shine"></div>
   <div class="logo">AA</div>
   <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
     <span></span><span></span><span></span>
@@ -1167,11 +1189,28 @@ window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('ske
 document.getElementById('menuToggle').addEventListener('click',()=>document.getElementById('navLinks').classList.toggle('open'));
 document.querySelectorAll('.nav-links a').forEach(a=>a.addEventListener('click',()=>document.getElementById('navLinks').classList.remove('open')));
 
-// ─── NAV SCROLL EFFECT ───
+// ─── NAV SCROLL EFFECT + ACTIVE SECTION ───
+const navLinks=document.querySelectorAll('.nav-links a');
+const navSections=[];
+navLinks.forEach(a=>{
+  const id=a.getAttribute('href').slice(1);
+  const el=document.getElementById(id);
+  if(el)navSections.push({id,el,link:a});
+});
 document.addEventListener('scroll',()=>{
   const n=document.querySelector('nav');
-  if(window.scrollY>80){n.style.background='rgba(14,14,14,.85)';n.style.boxShadow='0 8px 40px rgba(0,0,0,.5)'}
+  const st=window.scrollY;
+  if(st>80){n.style.background='rgba(14,14,14,.85)';n.style.boxShadow='0 8px 40px rgba(0,0,0,.5)'}
   else{n.style.background='var(--glass-bg)';n.style.boxShadow='0 8px 32px var(--glass-shadow)'}
+  let current='';
+  navSections.forEach(({id,el})=>{
+    const top=el.offsetTop-200;
+    const bottom=top+el.offsetHeight;
+    if(st>=top&&st<bottom)current=id;
+  });
+  navLinks.forEach(a=>{
+    a.classList.toggle('active',a.getAttribute('href')==='#'+current);
+  });
 });
 
 // ─── SKILLS ───
@@ -1185,7 +1224,7 @@ const skills=[
 ];
 const sGrid=document.getElementById('skillsGrid');
 skills.forEach(s=>{
-  const c=document.createElement('div');c.className='skill-card reveal-scale';
+  const c=document.createElement('div');c.className='skill-card glass-card reveal-scale';
   c.innerHTML=`<div class="icon">${s.icon}</div><div class="name">${s.name}</div><div class="level"><div class="level-bar"></div></div>`;
   sGrid.appendChild(c);
   observeReveal(c);
@@ -1221,7 +1260,7 @@ const tiers=[
 const pGrid=document.getElementById('pricingGrid');
 tiers.forEach(t=>{
   const c=document.createElement('div');
-  c.className=`pricing-card reveal-scale${t.popular?' popular':''}`;
+  c.className=`pricing-card glass-card reveal-scale${t.popular?' popular':''}`;
   c.innerHTML=`<div class="pricing-tier">${t.name}</div><div class="pricing-price">${t.price}</div><div class="pricing-duration">${t.dur}</div><div class="pricing-desc">${t.desc}</div><ul class="pricing-features">${t.ft.map(f=>`<li>${f}</li>`).join('')}</ul><a href="#contact" class="btn btn-sm${t.popular?'':' btn-outline'}"><span>Get Started${t.popular?' ★':''}</span></a>`;
   pGrid.appendChild(c);observeReveal(c);
 });
@@ -1258,7 +1297,7 @@ const testimonials=[
 ];
 const tGrid=document.getElementById('testimonialGrid');
 testimonials.forEach(t=>{
-  const c=document.createElement('div');c.className='testimonial-card reveal';
+  const c=document.createElement('div');c.className='testimonial-card glass-card reveal';
   c.innerHTML=`<div class="stars">${t.s}</div><blockquote>"${t.q}"</blockquote><div class="author">${t.a}</div><div class="role">${t.r}</div>`;
   tGrid.appendChild(c);observeReveal(c);
 });
