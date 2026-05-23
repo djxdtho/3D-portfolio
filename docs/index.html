@@ -1202,127 +1202,56 @@ document.addEventListener('mousemove',e=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{rs();},300)},{passive:true});
 
-// ─── Slow Constellations ───
-const n=108;
+// ─── Morphing Constellations ───
 const constStars=[];
-const starGroups=[];
-const groupCenters=[];
-
-// Constellation shapes
-function genShape(type,count,sp){
-  const pts=[];
-  function edge(verts,n){
-    for(let i=0;i<n;i++){
-      const s=Math.floor(Math.random()*verts.length);
-      const t=Math.random();
-      pts.push({x:verts[s].x+(verts[(s+1)%verts.length].x-verts[s].x)*t+Math.random()*sp*.05,y:verts[s].y+(verts[(s+1)%verts.length].y-verts[s].y)*t+Math.random()*sp*.05});
-    }
-  }
-  switch(type){
-  case 'ring':for(let i=0;i<count;i++){const a=(i/count)*Math.PI*2,r=sp*.6+Math.random()*sp*.1;pts.push({x:Math.cos(a)*r,y:Math.sin(a)*r});}break;
-  case 'cross':{const s=sp*.7,w=sp*.1;for(let i=0;i<count;i++){if(i<count/2){const t=(i/(count/2-1))-.5;pts.push({x:t*s,y:(Math.random()-.5)*w});}else{const t=((i-count/2)/(count/2-1))-.5;pts.push({x:(Math.random()-.5)*w,y:t*s});}}}break;
-  case 'triangle':{const sh=sp*Math.sqrt(3)/2;edge([{x:0,y:-sh*2/3},{x:sp/2,y:sh/3},{x:-sp/2,y:sh/3}],count);}break;
-  case 'diamond':edge([{x:0,y:-sp*.6},{x:sp*.6,y:0},{x:0,y:sp*.6},{x:-sp*.6,y:0}],count);break;
-  case 'pentagon':{const o=sp*.6,i=o*.45;const v=[];for(let k=0;k<10;k++){const a=(k*Math.PI/5)-Math.PI/2,r=k%2===0?o:i;v.push({x:Math.cos(a)*r,y:Math.sin(a)*r});}edge(v,count);}break;
-  case 'zigzag':for(let i=0;i<count;i++){const t=i/count;pts.push({x:(t-.5)*sp*1.4,y:Math.sin(t*Math.PI*6)*sp*.25+(Math.random()-.5)*sp*.03});}break;
-  }
+const n=120;
+function starShape(w,h){
+  const cx=w/2,cy=h/2,outer=Math.min(w,h)*.26,inner=outer*.45;
+  const hh=[];for(let i=0;i<10;i++){const a=(i*Math.PI/5)-Math.PI/2,rr=i%2===0?outer:inner;hh.push({x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr});}
+  const pts=[];for(let i=0;i<n;i++){const s=Math.floor(Math.random()*10),t=Math.random(),rx=hh[s].x+(hh[(s+1)%10].x-hh[s].x)*t,ry=hh[s].y+(hh[(s+1)%10].y-hh[s].y)*t,pull=.15+Math.random()*.85;pts.push({x:cx+(rx-cx)*pull+(Math.random()-.5)*2,y:cy+(ry-cy)*pull+(Math.random()-.5)*2});}
   return pts;
 }
+function ringShape(w,h){const cx=w/2,cy=h/2,r=Math.min(w,h)*.24;const pts=[];for(let i=0;i<n;i++){const a=(i/n)*Math.PI*2,rad=r+(Math.random()-.5)*r*.12;pts.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad});}return pts;}
+function diamondShape(w,h){const cx=w/2,cy=h/2,s=Math.min(w,h)*.28,hh=[{x:cx,y:cy-s},{x:cx+s,y:cy},{x:cx,y:cy+s},{x:cx-s,y:cy}];const pts=[];for(let i=0;i<n;i++){const seg=Math.floor(Math.random()*4),t=Math.random(),rx=hh[seg].x+(hh[(seg+1)%4].x-hh[seg].x)*t,ry=hh[seg].y+(hh[(seg+1)%4].y-hh[seg].y)*t,pull=.15+Math.random()*.85;pts.push({x:cx+(rx-cx)*pull+(Math.random()-.5)*2,y:cy+(ry-cy)*pull+(Math.random()-.5)*2});}return pts;}
+function spiralShape(w,h){const cx=w/2,cy=h/2,mr=Math.min(w,h)*.28;const pts=[];for(let i=0;i<n;i++){const t=i/n,a=t*Math.PI*8,r=t*mr;pts.push({x:cx+Math.cos(a+Math.sin(t*10)*.3)*r,y:cy+Math.sin(a+Math.sin(t*10)*.3)*r});}return pts;}
+function triangleShape(w,h){const cx=w/2,cy=h/2,s=Math.min(w,h)*.26,hh=[{x:cx,y:cy-s},{x:cx+s*.866,y:cy+s*.5},{x:cx-s*.866,y:cy+s*.5}];const pts=[];for(let i=0;i<n;i++){const seg=Math.floor(Math.random()*3),t=Math.random(),rx=hh[seg].x+(hh[(seg+1)%3].x-hh[seg].x)*t,ry=hh[seg].y+(hh[(seg+1)%3].y-hh[seg].y)*t,pull=.15+Math.random()*.85;pts.push({x:cx+(rx-cx)*pull+(Math.random()-.5)*2,y:cy+(ry-cy)*pull+(Math.random()-.5)*2});}return pts;}
 
-const groupDefs=[
-  {type:'ring',cx:.15,cy:.18,color:'rgba(255,255,255,'},
-  {type:'cross',cx:.85,cy:.15,color:'rgba(255,255,255,'},
-  {type:'triangle',cx:.12,cy:.55,color:'rgba(255,255,255,'},
-  {type:'diamond',cx:.88,cy:.5,color:'rgba(255,255,255,'},
-  {type:'pentagon',cx:.25,cy:.82,color:'rgba(255,255,255,'},
-  {type:'zigzag',cx:.75,cy:.85,color:'rgba(255,255,255,'},
-];
+const shapeFns=[starShape,ringShape,diamondShape,spiralShape,triangleShape,starShape];
+let shapeIdx=0;
 
-let idx=0;
-for(let g=0;g<groupDefs.length;g++){
-  starGroups[g]=[];
-  const gd=groupDefs[g];
-  const shape=genShape(gd.type,18,70);
-  const startX=gd.cx*window.innerWidth,startY=gd.cy*window.innerHeight;
-  groupCenters.push({x:startX,y:startY,ox:startX,oy:startY,phase:Math.random()*Math.PI*2,speed:.001+Math.random()*.0015,radX:20+Math.random()*40,radY:15+Math.random()*30});
-  for(let i=0;i<shape.length;i++){
-    const star={gx:shape[i].x,gy:shape[i].y,cx:startX+shape[i].x,cy:startY+shape[i].y,s:.6+Math.random()*2,o:.15+Math.random()*.25,twinkle:Math.random()*Math.PI*2,spd:.003+Math.random()*.008};
-    constStars.push(star);
-    starGroups[g].push(star);
-    idx++;
-  }
+for(let i=0;i<n;i++){
+  constStars.push({cx:Math.random()*window.innerWidth,cy:Math.random()*window.innerHeight,tx:0,ty:0,s:.8+Math.random()*2.2,o:.1+Math.random()*.2,twinkle:Math.random()*Math.PI*2,speed:.003+Math.random()*.008});
 }
 
-// Pre-rendered glow sprite
-const glowSpr=document.createElement('canvas');
-glowSpr.width=64;glowSpr.height=64;
-const gc=glowSpr.getContext('2d');
-const grd=gc.createRadialGradient(32,32,0,32,32,32);
-grd.addColorStop(0,'rgba(255,255,255,1)');
-grd.addColorStop(.35,'rgba(255,255,255,.4)');
-grd.addColorStop(1,'rgba(255,255,255,0)');
-gc.fillStyle=grd;gc.fillRect(0,0,64,64);
+function morphToShape(idx){
+  const t=shapeFns[idx](window.innerWidth,window.innerHeight);
+  constStars.forEach((s,i)=>{s.tx=t[i].x;s.ty=t[i].y;});
+  shapeIdx=idx;
+}
 
-let frame=0;
+const MORPH_SPEED=.012;
+
+setTimeout(()=>morphToShape(0),300);
+let shapeTimer=0;
+setInterval(()=>{shapeTimer++;if(shapeTimer%6===0)morphToShape((shapeIdx+1)%shapeFns.length);},1000);
 
 function drawConstellations(ctx,w,h){
-  frame++;
-
-  // Update group centers (slow Lissajous drift)
-  for(let g=0;g<groupCenters.length;g++){
-    const c=groupCenters[g];
-    const t=frame*c.speed+c.phase;
-    c.x=c.ox+Math.sin(t)*c.radX;
-    c.y=c.oy+Math.cos(t*1.3)*c.radY;
-  }
-
-  // Position stars
-  for(let g=0;g<starGroups.length;g++){
-    const gc=groupCenters[g];
-    const members=starGroups[g];
-    for(let i=0;i<members.length;i++){
-      const s=members[i];
-      const targetX=gc.x+s.gx,targetY=gc.y+s.gy;
-      s.cx+=(targetX-s.cx)*.015;
-      s.cy+=(targetY-s.cy)*.015;
-      s.cx+=Math.sin(s.twinkle*2+i)*.15;
-      s.cy+=Math.cos(s.twinkle*1.3+i*.7)*.15;
-    }
-  }
-
-  // Within-group connections
-  ctx.beginPath();
-  for(let g=0;g<starGroups.length;g++){
-    const members=starGroups[g];
-    for(let i=0;i<members.length;i+=2){
-      for(let j=i+2;j<members.length;j+=3){
-        const dx=members[i].cx-members[j].cx;
-        const dy=members[i].cy-members[j].cy;
-        const d=Math.sqrt(dx*dx+dy*dy);
-        if(d<90){
-          ctx.moveTo(members[i].cx,members[i].cy);
-          ctx.lineTo(members[j].cx,members[j].cy);
-        }
-      }
-    }
-  }
-  ctx.strokeStyle='rgba(255,255,255,.035)';
-  ctx.lineWidth=.4;ctx.stroke();
-
-  // Draw stars
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
-    s.twinkle+=s.spd;
-    const tw=Math.sin(s.twinkle)*.5+.5;
-    const sz=s.s;
-    const al=s.o*(.3+tw*.7);
-    const gSize=sz*4;
-    ctx.globalAlpha=al;
-    ctx.drawImage(glowSpr,s.cx-gSize,s.cy-gSize,gSize*2,gSize*2);
-    ctx.globalAlpha=1;
-    ctx.beginPath();ctx.arc(s.cx,s.cy,sz*.5,0,Math.PI*2);
-    ctx.fillStyle=`rgba(255,255,255,${Math.min(al*1.5,1)})`;
-    ctx.fill();
+    s.cx+=(s.tx-s.cx)*MORPH_SPEED;
+    s.cy+=(s.ty-s.cy)*MORPH_SPEED;
+    if(Math.abs(s.cx-s.tx)<2&&Math.abs(s.cy-s.ty)<2&&Math.random()<.005){s.tx+=Math.random()*8-4;s.ty+=Math.random()*8-4;}
+    s.twinkle+=s.speed;
+    const glow=Math.sin(s.twinkle)*.5+.5;
+    const alpha=s.o*(.5+glow*.5);
+    ctx.beginPath();ctx.arc(s.cx,s.cy,s.s,0,Math.PI*2);
+    const g=ctx.createRadialGradient(s.cx,s.cy,0,s.cx,s.cy,s.s*5);
+    g.addColorStop(0,`rgba(255,255,255,${alpha})`);g.addColorStop(.5,`rgba(255,255,255,${alpha*.3})`);g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.fill();
+    for(let j=i+1;j<constStars.length;j++){
+      const dx=s.cx-constStars[j].cx,dy=s.cy-constStars[j].cy,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<110){const ca=.055*(1-dist/110);ctx.beginPath();ctx.moveTo(s.cx,s.cy);ctx.lineTo(constStars[j].cx,constStars[j].cy);ctx.strokeStyle=`rgba(255,255,255,${ca})`;ctx.lineWidth=.5;ctx.stroke();}
+    }
   }
 }
 
