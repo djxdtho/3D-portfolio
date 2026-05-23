@@ -1217,7 +1217,7 @@ function drawConstellations(ctx,w,h){
     if(Math.abs(s.cx-s.tx)<3&&Math.abs(s.cy-s.ty)<3&&Math.random()<.008){s.tx=Math.random()*w;s.ty=Math.random()*h;}
     s.twinkle+=s.speed;
     const glow=Math.sin(s.twinkle)*.5+.5;
-    const alpha=s.o*(.5+glow*.5);
+    const alpha=s.o*(.55+glow*.5);
     ctx.beginPath();ctx.arc(s.cx,s.cy,s.s,0,Math.PI*2);
     const g=ctx.createRadialGradient(s.cx,s.cy,0,s.cx,s.cy,s.s*5);
     g.addColorStop(0,`rgba(255,255,255,${alpha})`);g.addColorStop(.5,`rgba(255,255,255,${alpha*.3})`);g.addColorStop(1,'transparent');
