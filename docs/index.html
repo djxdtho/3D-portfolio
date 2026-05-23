@@ -240,15 +240,38 @@ section{
 }
 .section-inner{width:100%;max-width:1100px;position:relative}
 
+/* ── Scroll Progress Bar ── */
+#scroll-progress{
+  position:fixed;top:0;left:0;z-index:1001;
+  height:2px;width:0;
+  background:linear-gradient(90deg,var(--grad-1),var(--grad-2));
+  transition:width 50ms linear;
+}
+
 /* entrance animations */
-.reveal{transform:translateY(50px);opacity:0;transition:all .9s cubic-bezier(.22,1,.36,1)}
+.reveal{transform:translateY(60px);opacity:0;transition:all 1s cubic-bezier(.16,1,.3,1)}
 .reveal.visible{transform:translateY(0);opacity:1}
-.reveal-left{transform:translateX(-60px);opacity:0;transition:all .9s cubic-bezier(.22,1,.36,1)}
+.reveal-left{transform:translateX(-80px);opacity:0;transition:all 1s cubic-bezier(.16,1,.3,1)}
 .reveal-left.visible{transform:translateX(0);opacity:1}
-.reveal-right{transform:translateX(60px);opacity:0;transition:all .9s cubic-bezier(.22,1,.36,1)}
+.reveal-right{transform:translateX(80px);opacity:0;transition:all 1s cubic-bezier(.16,1,.3,1)}
 .reveal-right.visible{transform:translateX(0);opacity:1}
-.reveal-scale{transform:scale(.9);opacity:0;transition:all .9s cubic-bezier(.22,1,.36,1)}
+.reveal-scale{transform:scale(.85);opacity:0;transition:all 1s cubic-bezier(.16,1,.3,1)}
 .reveal-scale.visible{transform:scale(1);opacity:1}
+.reveal-up{transform:translateY(80px);opacity:0;transition:all 1.1s cubic-bezier(.16,1,.3,1)}
+.reveal-up.visible{transform:translateY(0);opacity:1}
+.reveal-blur{transform:translateY(40px);opacity:0;filter:blur(8px);transition:all 1.2s cubic-bezier(.16,1,.3,1)}
+.reveal-blur.visible{transform:translateY(0);opacity:1;filter:blur(0)}
+
+/* staggered delays */
+.stagger-1{transition-delay:.05s}.stagger-2{transition-delay:.1s}.stagger-3{transition-delay:.15s}
+.stagger-4{transition-delay:.2s}.stagger-5{transition-delay:.25s}.stagger-6{transition-delay:.3s}
+.stagger-7{transition-delay:.35s}.stagger-8{transition-delay:.4s}.stagger-9{transition-delay:.45s}
+.stagger-10{transition-delay:.5s}.stagger-11{transition-delay:.55s}.stagger-12{transition-delay:.6s}
+.stagger-13{transition-delay:.65s}.stagger-14{transition-delay:.7s}.stagger-15{transition-delay:.75s}
+.stagger-16{transition-delay:.8s}.stagger-17{transition-delay:.85s}.stagger-18{transition-delay:.9s}
+
+/* parallax sections */
+.parallax-section{will-change:transform}
 @keyframes entrance{to{transform:translateY(0);opacity:1}}
 
 .section-label{
@@ -706,6 +729,9 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 <div class="music-note" style="left:65%;animation-delay:-3s">♫</div>
 <div class="music-note" style="left:85%;animation-delay:-9s">♬</div>
 
+<!-- Scroll Progress Bar -->
+<div id="scroll-progress"></div>
+
 <!-- Skeleton -->
 <div id="skeleton">
   <div class="skel-nav"></div>
@@ -780,7 +806,7 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 </div>
 
 <!-- ═══ ABOUT ═══ -->
-<section id="about">
+<section id="about" class="parallax-section" data-speed=".04">
   <div class="section-inner">
     <div class="about-visual reveal-scale">
       <div class="monogram">AA</div>
@@ -857,7 +883,7 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 </section>
 
 <!-- ═══ SKILLS ═══ -->
-<section id="skills">
+<section id="skills" class="parallax-section" data-speed=".03">
   <div class="section-inner" style="text-align:center">
     <div class="section-label reveal">Skills</div>
     <h2 class="section-title reveal">My Toolkit</h2>
@@ -867,7 +893,7 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 </section>
 
 <!-- ═══ SERVICES ═══ -->
-<section id="services">
+<section id="services" class="parallax-section" data-speed=".04">
   <div class="section-inner">
     <div style="text-align:center">
       <div class="section-label reveal">Services</div>
@@ -879,7 +905,7 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 </section>
 
 <!-- ═══ PRICING ═══ -->
-<section id="pricing">
+<section id="pricing" class="parallax-section" data-speed=".03">
   <div class="section-inner">
     <div style="text-align:center">
       <div class="section-label reveal">Pricing</div>
@@ -925,7 +951,7 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 </section>
 
 <!-- ═══ PORTFOLIO ═══ -->
-<section id="portfolio">
+<section id="portfolio" class="parallax-section" data-speed=".05">
   <div class="section-inner">
     <div style="text-align:center">
       <div class="section-label reveal">Portfolio</div>
@@ -937,7 +963,7 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 </section>
 
 <!-- ═══ TESTIMONIALS ═══ -->
-<section id="testimonials" style="min-height:auto;padding-top:80px">
+<section id="testimonials" class="parallax-section" data-speed=".03" style="min-height:auto;padding-top:80px">
   <div class="section-inner" style="text-align:center">
     <div class="section-label reveal">Testimonials</div>
     <h2 class="section-title reveal">Kind Words</h2>
@@ -978,7 +1004,7 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 </section>
 
 <!-- ═══ CONTACT ═══ -->
-<section id="contact">
+<section id="contact" class="parallax-section" data-speed=".04">
   <div class="section-inner">
     <div style="text-align:center">
       <div class="section-label reveal">Contact</div>
@@ -1172,7 +1198,7 @@ window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('ske
 document.getElementById('menuToggle').addEventListener('click',()=>document.getElementById('navLinks').classList.toggle('open'));
 document.querySelectorAll('.nav-links a').forEach(a=>a.addEventListener('click',()=>document.getElementById('navLinks').classList.remove('open')));
 
-// ─── NAV SCROLL EFFECT + ACTIVE SECTION ───
+// ─── NAV SCROLL EFFECT + ACTIVE SECTION + PROGRESS BAR + PARALLAX ───
 const navLinks=document.querySelectorAll('.nav-links a');
 const navSections=[];
 navLinks.forEach(a=>{
@@ -1180,13 +1206,17 @@ navLinks.forEach(a=>{
   const el=document.getElementById(id);
   if(el)navSections.push({id,el,link:a});
 });
+const progressBar=document.getElementById('scroll-progress');
+const paraEls=document.querySelectorAll('.parallax-section');
 let ticking=false;
 document.addEventListener('scroll',()=>{
   if(!ticking){ticking=true;requestAnimationFrame(()=>{
     const n=document.querySelector('nav');
     const st=window.scrollY;
+    const dh=document.documentElement.scrollHeight-window.innerHeight;
     if(st>80){n.style.background='rgba(14,14,14,.85)';n.style.boxShadow='0 8px 40px rgba(0,0,0,.5)'}
     else{n.style.background='var(--glass-bg)';n.style.boxShadow='0 8px 32px var(--glass-shadow)'}
+    progressBar.style.width=Math.min((st/dh)*100,100)+'%';
     let current='';
     navSections.forEach(({id,el})=>{
       const top=el.offsetTop-200;
@@ -1194,6 +1224,14 @@ document.addEventListener('scroll',()=>{
       if(st>=top&&st<bottom)current=id;
     });
     navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+current));
+    paraEls.forEach(el=>{
+      const speed=parseFloat(el.dataset.speed)||.05;
+      const rect=el.getBoundingClientRect();
+      if(rect.top<window.innerHeight&&rect.bottom>0){
+        const offset=(window.innerHeight-rect.top)*speed;
+        el.style.transform=`translateY(${offset}px)`;
+      }
+    });
     ticking=false;
   })}
 },{passive:true});
@@ -1209,7 +1247,8 @@ const skills=[
 ];
 const sGrid=document.getElementById('skillsGrid');
 skills.forEach(s=>{
-  const c=document.createElement('div');c.className='skill-card glass-card reveal-scale';
+  const idx=skills.indexOf(s);
+  const c=document.createElement('div');c.className=`skill-card glass-card reveal-scale stagger-${Math.min(idx+1,18)}`;
   c.innerHTML=`<div class="icon">${s.icon}</div><div class="name">${s.name}</div><div class="level"><div class="level-bar"></div></div>`;
   sGrid.appendChild(c);
   observeReveal(c);
