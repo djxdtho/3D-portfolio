@@ -1212,7 +1212,7 @@ for(let i=0;i<n;i++){
   const theta=phi*i;
   constStars.push({
     x3:r*Math.cos(theta),y3:y,z3:r*Math.sin(theta),
-    cx:0,cy:0,
+    cx:0,cy:0,startX:0,startY:0,
     hideX:Math.random()*window.innerWidth,
     hideY:Math.random()*window.innerHeight,
     expX:0,expY:0,
@@ -1240,9 +1240,10 @@ function drawConstellations(ctx,w,h){
   case 'orbit':
     phaseT+=.004;
     if(phaseT>=1){phaseT=0;phase='explode';constStars.forEach(s=>{
+      s.startX=s.cx;s.startY=s.cy;
       const ang=Math.atan2(s.y3,s.x3)+Math.random()*.8-.4;
       const elev=Math.asin(s.y3)+Math.random()*.3-.15;
-      const mag=80+Math.random()*250;
+      const mag=200+Math.random()*500;
       s.expX=cx+Math.cos(ang)*Math.cos(elev)*mag;
       s.expY=cy+Math.sin(elev)*mag;
     });}
@@ -1305,8 +1306,8 @@ function drawConstellations(ctx,w,h){
       s.cx=rx;
       s.cy=ry;
     } else if(phase==='explode'){
-      s.cx=rx+(s.expX-rx)*easeExplode;
-      s.cy=ry+(s.expY-ry)*easeExplode;
+      s.cx=s.startX+(s.expX-s.startX)*easeExplode;
+      s.cy=s.startY+(s.expY-s.startY)*easeExplode;
     } else if(phase==='reform'){
       s.cx=s.expX+(rx-s.expX)*easeReform;
       s.cy=s.expY+(ry-s.expY)*easeReform;
@@ -1321,22 +1322,22 @@ function drawConstellations(ctx,w,h){
     ctx.fill();
   }
 
-  // Connections — single path batch
-  const connDist=phase==='explode'||phase==='reform'?250:140;
+  // Connections — sparse web
+  const webDist=phase==='explode'||phase==='reform'?180:70;
   ctx.beginPath();
-  for(let i=0;i<constStars.length;i++){
-    for(let j=i+1;j<constStars.length;j++){
+  for(let i=0;i<constStars.length;i+=2){
+    for(let j=i+2;j<constStars.length;j+=3){
       const dx=constStars[i].cx-constStars[j].cx;
       const dy=constStars[i].cy-constStars[j].cy;
       const dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<connDist){
+      if(dist<webDist){
         ctx.moveTo(constStars[i].cx,constStars[i].cy);
         ctx.lineTo(constStars[j].cx,constStars[j].cy);
       }
     }
   }
-  ctx.strokeStyle='rgba(255,255,255,.035)';
-  ctx.lineWidth=.4;ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.025)';
+  ctx.lineWidth=.35;ctx.stroke();
 }
 
 let rafId;
