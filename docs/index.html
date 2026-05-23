@@ -1240,14 +1240,21 @@ grd.addColorStop(.35,'rgba(255,255,255,.4)');
 grd.addColorStop(1,'rgba(255,255,255,0)');
 gc.fillStyle=grd;gc.fillRect(0,0,64,64);
 
-let cPhase='spread',cTimer=0,rotA=0;
-let formProg=0,accelProg=0,explProg=0,driftF=1;
+let cPhase='clump',cTimer=0,rotA=0;
+let clumpProg=0,burstProg=0,formProg=0,accelProg=0,explProg=0,driftF=1;
 
 function drawConstellations(ctx,w,h){
   const cx=w/2,cy=h/2,baseR=Math.min(w,h)*.115;
 
   // ── Phase machine ──
-  if(cPhase==='spread'){
+  if(cPhase==='clump'){
+    cTimer++;clumpProg=Math.min(1,cTimer/150);
+    if(clumpProg>=1){cPhase='burst';cTimer=0;}
+  } else if(cPhase==='burst'){
+    cTimer++;burstProg=Math.min(1,cTimer/120);
+    if(burstProg>=1){cPhase='form';cTimer=0;formProg=0;driftF=1;
+      constStars.forEach(s=>{s.sx=s.cx;s.sy=s.cy;});}
+  } else if(cPhase==='spread'){
     cTimer++;driftF=1;
     if(cTimer>=360){cTimer=0;cPhase='form';formProg=0;driftF=1;
       constStars.forEach(s=>{s.sx=s.cx;s.sy=s.cy;});}
@@ -1256,19 +1263,23 @@ function drawConstellations(ctx,w,h){
     if(formProg>=1){cPhase='orbit';cTimer=0;driftF=0;}
   } else if(cPhase==='orbit'){
     cTimer++;accelProg=Math.min(1,cTimer/240);driftF=0;
-    if(accelProg>=1){cPhase='explode';cTimer=0;driftF=0;}
+    if(accelProg>=1){cPhase='explode';cTimer=0;driftF=0;
+      constStars.forEach(s=>{s.sx=Math.random()*w;s.sy=Math.random()*h;});}
   } else if(cPhase==='explode'){
     cTimer++;explProg=Math.min(1,cTimer/80);driftF=0;
-    if(explProg>=1){cPhase='spread';cTimer=0;driftF=1;
-      constStars.forEach(s=>{s.sx=Math.random()*w;s.sy=Math.random()*h;});}
+    if(explProg>=1){cPhase='spread';cTimer=0;driftF=1;}
   }
 
-  // ── Sphere state ──
+  // ── Ease helpers ──
+  const clumpEase=1-Math.pow(1-clumpProg,3);
+  const burstEase=1-Math.pow(1-burstProg,3);
   const formEase=1-Math.pow(1-formProg,3);
   const accel=accelProg<.5?2*accelProg*accelProg:1-Math.pow(-2*accelProg+2,2)/2;
   const explEase=1-Math.pow(1-explProg,2);
+
+  // ── Sphere state (only for form/orbit/explode) ──
   let spd=0,size=1;
-  if(cPhase==='spread'){spd=0;size=0;}
+  if(cPhase==='spread'||cPhase==='clump'||cPhase==='burst'){spd=0;size=0;}
   else if(cPhase==='form'){spd=.002*formEase;size=formEase;}
   else if(cPhase==='orbit'){spd=.006+accel*.044;size=1+accel*.7;}
   else if(cPhase==='explode'){spd=.05*(1-explEase);size=1.7-explEase*.6;}
@@ -1279,15 +1290,9 @@ function drawConstellations(ctx,w,h){
   const tilt=Math.PI*.3;
   const cosT=Math.cos(tilt),sinT=Math.sin(tilt);
 
-  // ── Init explosion targets ──
-  if(cPhase==='explode'&&cTimer===1){
-    constStars.forEach(s=>{
-      const ang=Math.atan2(s.z3,s.x3)+Math.random()*.6-.3;
-      const elev=Math.asin(s.y3)+Math.random()*.2-.1;
-      const mag=200+Math.random()*500;
-      s.ex=cx+Math.cos(ang)*Math.cos(elev)*mag;
-      s.ey=cy+Math.sin(elev)*mag;
-    });
+  // ── Init scatter positions ──
+  if(cPhase==='burst'&&cTimer===1){
+    constStars.forEach(s=>{s.sx=Math.random()*w;s.sy=Math.random()*h;});
   }
 
   // ── Position stars ──
@@ -1302,7 +1307,13 @@ function drawConstellations(ctx,w,h){
     const ry=cy+y1*curR*sc;
     s.depth=z2;
 
-    if(cPhase==='spread'){
+    if(cPhase==='clump'){
+      s.cx=s.sx+(cx-s.sx)*clumpEase;
+      s.cy=s.sy+(cy-s.sy)*clumpEase;
+    } else if(cPhase==='burst'){
+      s.cx=cx+(s.sx-cx)*burstEase;
+      s.cy=cy+(s.sy-cy)*burstEase;
+    } else if(cPhase==='spread'){
       s.cx+=(s.sx-s.cx)*.025;
       s.cy+=(s.sy-s.cy)*.025;
       s.cx+=Math.sin(s.twinkle*2+i)*.2*driftF;
@@ -1313,8 +1324,8 @@ function drawConstellations(ctx,w,h){
       s.cx+=Math.sin(s.twinkle*2+i)*.2*driftF;
       s.cy+=Math.cos(s.twinkle*1.3+i*.7)*.2*driftF;
     } else if(cPhase==='explode'){
-      s.cx=rx+(s.ex-rx)*explEase;
-      s.cy=ry+(s.ey-ry)*explEase;
+      s.cx=rx+(s.sx-rx)*explEase;
+      s.cy=ry+(s.sy-ry)*explEase;
     } else {
       s.cx=rx;
       s.cy=ry;
