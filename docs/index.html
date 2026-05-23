@@ -132,6 +132,37 @@ a{text-decoration:none;color:inherit}
   100%{opacity:0;transform:scale(4) rotate(45deg)}
 }
 
+/* ── Section Burst Load-in ── */
+.section-burst{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;
+}
+.section-burst .b-shape{
+  position:absolute;border-radius:50%;opacity:0;
+  animation:burstAnim 1.6s cubic-bezier(.22,1,.36,1) forwards;
+}
+.section-burst .b-shape:nth-child(1){
+  width:300px;height:300px;background:var(--grad-color);filter:blur(60px);
+  top:30%;left:20%;animation-delay:0s;
+}
+.section-burst .b-shape:nth-child(2){
+  width:200px;height:200px;background:var(--grad-color2);filter:blur(50px);
+  bottom:20%;right:15%;animation-delay:.15s;
+}
+.section-burst .b-shape:nth-child(3){
+  width:150px;height:150px;background:var(--grad-color);filter:blur(40px);
+  top:60%;left:60%;animation-delay:.3s;
+}
+.section-burst .b-shape:nth-child(4){
+  width:100px;height:100px;background:var(--grad-color2);filter:blur(30px);
+  top:15%;right:30%;animation-delay:.45s;
+}
+@keyframes burstAnim{
+  0%{opacity:0;transform:scale(0) rotate(0deg)}
+  20%{opacity:.5;transform:scale(1.2) rotate(15deg)}
+  60%{opacity:.3;transform:scale(1.8) rotate(-10deg)}
+  100%{opacity:0;transform:scale(3) rotate(20deg)}
+}
+
 /* ═══════════════════════════════════════════════════
    NAVBAR — LIQUID GLASS
    ═══════════════════════════════════════════════════ */
@@ -1190,6 +1221,23 @@ function observeReveal(el){
     if(e.isIntersecting){e.target.classList.add('visible');obs.disconnect();}
   },{threshold:.1,rootMargin:'0px 0px -50px 0px'}).observe(el);
 }
+
+// ─── SECTION BURST LOAD-IN ───
+function addSectionBurst(section){
+  if(section.querySelector('.section-burst'))return;
+  const burst=document.createElement('div');burst.className='section-burst';
+  burst.innerHTML='<div class="b-shape"></div><div class="b-shape"></div><div class="b-shape"></div><div class="b-shape"></div>';
+  section.prepend(burst);
+  // Remove after animation completes
+  setTimeout(()=>burst.remove(),2000);
+}
+// Trigger burst on each section when it first becomes visible
+document.querySelectorAll('section[id]').forEach(section=>{
+  if(section.id==='hero')return; // hero has its own entrance
+  new IntersectionObserver(([e],obs)=>{
+    if(e.isIntersecting){addSectionBurst(section);obs.disconnect();}
+  },{threshold:.05}).observe(section);
+});
 
 // ─── SKELETON ───
 window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('skeleton').classList.add('hide');setTimeout(()=>document.getElementById('skeleton')?.remove(),600)},1400)});
