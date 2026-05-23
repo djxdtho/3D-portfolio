@@ -1202,45 +1202,19 @@ document.addEventListener('mousemove',e=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{rs();},300)},{passive:true});
 
-// ─── Morphing Constellations ───
+// ─── Static Constellation ───
 const constStars=[];
 const n=120;
-function starShape(w,h){
-  const cx=w/2,cy=h/2,outer=Math.min(w,h)*.26,inner=outer*.45;
-  const hh=[];for(let i=0;i<10;i++){const a=(i*Math.PI/5)-Math.PI/2,rr=i%2===0?outer:inner;hh.push({x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr});}
-  const pts=[];for(let i=0;i<n;i++){const s=Math.floor(Math.random()*10),t=Math.random(),rx=hh[s].x+(hh[(s+1)%10].x-hh[s].x)*t,ry=hh[s].y+(hh[(s+1)%10].y-hh[s].y)*t,pull=.15+Math.random()*.85;pts.push({x:cx+(rx-cx)*pull+(Math.random()-.5)*2,y:cy+(ry-cy)*pull+(Math.random()-.5)*2});}
-  return pts;
-}
-function ringShape(w,h){const cx=w/2,cy=h/2,r=Math.min(w,h)*.24;const pts=[];for(let i=0;i<n;i++){const a=(i/n)*Math.PI*2,rad=r+(Math.random()-.5)*r*.12;pts.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad});}return pts;}
-function diamondShape(w,h){const cx=w/2,cy=h/2,s=Math.min(w,h)*.28,hh=[{x:cx,y:cy-s},{x:cx+s,y:cy},{x:cx,y:cy+s},{x:cx-s,y:cy}];const pts=[];for(let i=0;i<n;i++){const seg=Math.floor(Math.random()*4),t=Math.random(),rx=hh[seg].x+(hh[(seg+1)%4].x-hh[seg].x)*t,ry=hh[seg].y+(hh[(seg+1)%4].y-hh[seg].y)*t,pull=.15+Math.random()*.85;pts.push({x:cx+(rx-cx)*pull+(Math.random()-.5)*2,y:cy+(ry-cy)*pull+(Math.random()-.5)*2});}return pts;}
-function spiralShape(w,h){const cx=w/2,cy=h/2,mr=Math.min(w,h)*.28;const pts=[];for(let i=0;i<n;i++){const t=i/n,a=t*Math.PI*8,r=t*mr;pts.push({x:cx+Math.cos(a+Math.sin(t*10)*.3)*r,y:cy+Math.sin(a+Math.sin(t*10)*.3)*r});}return pts;}
-function triangleShape(w,h){const cx=w/2,cy=h/2,s=Math.min(w,h)*.26,hh=[{x:cx,y:cy-s},{x:cx+s*.866,y:cy+s*.5},{x:cx-s*.866,y:cy+s*.5}];const pts=[];for(let i=0;i<n;i++){const seg=Math.floor(Math.random()*3),t=Math.random(),rx=hh[seg].x+(hh[(seg+1)%3].x-hh[seg].x)*t,ry=hh[seg].y+(hh[(seg+1)%3].y-hh[seg].y)*t,pull=.15+Math.random()*.85;pts.push({x:cx+(rx-cx)*pull+(Math.random()-.5)*2,y:cy+(ry-cy)*pull+(Math.random()-.5)*2});}return pts;}
-
-const shapeFns=[starShape,ringShape,diamondShape,spiralShape,triangleShape,starShape];
-let shapeIdx=0;
-
 for(let i=0;i<n;i++){
-  constStars.push({cx:Math.random()*window.innerWidth,cy:Math.random()*window.innerHeight,tx:0,ty:0,s:.8+Math.random()*2.2,o:.1+Math.random()*.2,twinkle:Math.random()*Math.PI*2,speed:.003+Math.random()*.008});
+  constStars.push({cx:Math.random()*window.innerWidth,cy:Math.random()*window.innerHeight,tx:Math.random()*window.innerWidth,ty:Math.random()*window.innerHeight,s:.8+Math.random()*2.2,o:.1+Math.random()*.2,twinkle:Math.random()*Math.PI*2,speed:.003+Math.random()*.008});
 }
-
-function morphToShape(idx){
-  const t=shapeFns[idx](window.innerWidth,window.innerHeight);
-  constStars.forEach((s,i)=>{s.tx=t[i].x;s.ty=t[i].y;});
-  shapeIdx=idx;
-}
-
-const MORPH_SPEED=.012;
-
-setTimeout(()=>morphToShape(0),300);
-let shapeTimer=0;
-setInterval(()=>{shapeTimer++;if(shapeTimer%6===0)morphToShape((shapeIdx+1)%shapeFns.length);},1000);
 
 function drawConstellations(ctx,w,h){
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
-    s.cx+=(s.tx-s.cx)*MORPH_SPEED;
-    s.cy+=(s.ty-s.cy)*MORPH_SPEED;
-    if(Math.abs(s.cx-s.tx)<2&&Math.abs(s.cy-s.ty)<2&&Math.random()<.005){s.tx+=Math.random()*8-4;s.ty+=Math.random()*8-4;}
+    s.cx+=(s.tx-s.cx)*.006;
+    s.cy+=(s.ty-s.cy)*.006;
+    if(Math.abs(s.cx-s.tx)<3&&Math.abs(s.cy-s.ty)<3&&Math.random()<.008){s.tx=Math.random()*w;s.ty=Math.random()*h;}
     s.twinkle+=s.speed;
     const glow=Math.sin(s.twinkle)*.5+.5;
     const alpha=s.o*(.5+glow*.5);
