@@ -1515,12 +1515,13 @@ tiers.forEach(t=>{
 });
 
 // ─── PORTFOLIO ───
-const colors=['#ff6b35','#b5e853','#00d4ff','#ff9a8b','#e8f5ff','#f0b429'];
 const pfoGrid=document.getElementById('portfolioGrid');
 const projects=[
   {title:'Calculator',desc:'A sleek glass-morphism calculator with basic arithmetic, keyboard support, and responsive design.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/calculator/',icon:'<img src="https://djxdtho.github.io/calculator/favicon.svg" alt="" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
+  {title:'FitTrack',desc:'A fitness app with AI coach, workout tracking, analytics, and exercise library — plus a companion website to showcase features and enable downloads.',tags:['Swift','SwiftUI','Firebase'],url:'https://djxdtho.github.io/3D-portfolio/fittrack/',icon:'<div style="font-size:2.2rem;line-height:1">💪</div>',color:'#22c55e'},
+  {title:'Zari Restaurant',desc:'A modern restaurant website with menu showcase, gallery, contact info, and reservation booking — built for a clean, appetizing brand presence.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/Zari-Restaurant/',icon:'<div style="font-size:2.2rem;line-height:1">🍽</div>',color:'#f59e0b'},
 ];
-for(let i=0;i<6;i++){
+for(let i=0;i<projects.length;i++){
   const item=document.createElement('div');item.className='portfolio-item';
   const tilt=Math.floor(Math.random()*6)-3;
   item.style.transform=`rotate(${tilt}deg)`;
@@ -1540,18 +1541,6 @@ for(let i=0;i<6;i++){
         <h4>${p.title}</h4>
         <p>${p.desc}</p>
         <div class="tech">${p.tags.map(t=>`<span>${t}</span>`).join('')}</div>
-      </div>`;
-  } else {
-    const c=colors[(i-projects.length)%colors.length];
-    item.innerHTML=`
-      <div class="thumb" style="background:linear-gradient(135deg,${c}33,${colors[(i-projects.length+1)%colors.length]}22);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px">
-        <div style="font-size:3rem;font-weight:800;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,${c},${colors[(i-projects.length+1)%colors.length]});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transform:rotate(-${tilt}deg);opacity:.8">CS</div>
-        <div style="font-size:1.6rem;opacity:.2">✦</div>
-      </div>
-      <div class="tag" style="font-family:'Space Grotesk',sans-serif;font-weight:700;background:${c}22;border-color:${c}44;color:${c}">Coming Soon</div>
-      <div class="info" style="align-items:center;justify-content:center;text-align:center;background:linear-gradient(to top,rgba(0,0,0,.95) 20%,rgba(0,0,0,.3) 70%)">
-        <h4 style="font-size:1.4rem;font-family:'Space Grotesk',sans-serif;transform:rotate(-2deg)">✦ Coming Soon ✦</h4>
-        <p style="font-size:.85rem;transform:rotate(1deg)">Something exciting is brewing</p>
       </div>`;
   }
   pfoGrid.appendChild(item);
