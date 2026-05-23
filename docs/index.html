@@ -1388,6 +1388,9 @@ tiers.forEach(t=>{
 // ─── PORTFOLIO ───
 const colors=['#ff6b35','#b5e853','#00d4ff','#ff9a8b','#e8f5ff','#f0b429'];
 const pfoGrid=document.getElementById('portfolioGrid');
+const projects=[
+  {title:'Calculator',desc:'A sleek glass-morphism calculator with basic arithmetic, keyboard support, and responsive design.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/calculator/',icon:'⟐',color:'#00d4ff'},
+];
 for(let i=0;i<6;i++){
   const item=document.createElement('div');item.className='portfolio-item';
   const tilt=Math.floor(Math.random()*6)-3;
@@ -1395,16 +1398,33 @@ for(let i=0;i<6;i++){
   item.style.transition='transform .4s cubic-bezier(.22,1,.36,1),box-shadow .4s';
   item.addEventListener('mouseenter',()=>{item.style.transform=`rotate(0deg) scale(1.03)`});
   item.addEventListener('mouseleave',()=>{item.style.transform=`rotate(${tilt}deg)`});
-  item.innerHTML=`
-    <div class="thumb" style="background:linear-gradient(135deg,${colors[i%colors.length]}33,${colors[(i+1)%colors.length]}22);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px">
-      <div style="font-size:3rem;font-weight:800;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,${colors[i%colors.length]},${colors[(i+1)%colors.length]});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transform:rotate(-${tilt}deg);opacity:.8">CS</div>
-      <div style="font-size:1.6rem;opacity:.2">✦</div>
-    </div>
-    <div class="tag" style="font-family:'Space Grotesk',sans-serif;font-weight:700;background:${colors[i%colors.length]}22;border-color:${colors[i%colors.length]}44;color:${colors[i%colors.length]}">Coming Soon</div>
-    <div class="info" style="align-items:center;justify-content:center;text-align:center;background:linear-gradient(to top,rgba(0,0,0,.95) 20%,rgba(0,0,0,.3) 70%)">
-      <h4 style="font-size:1.4rem;font-family:'Space Grotesk',sans-serif;transform:rotate(-2deg)">✦ Coming Soon ✦</h4>
-      <p style="font-size:.85rem;transform:rotate(1deg)">Something exciting is brewing</p>
-    </div>`;
+  const p=projects[i];
+  if(p){
+    item.style.cursor='pointer';
+    item.addEventListener('click',()=>window.open(p.url,'_blank'));
+    item.innerHTML=`
+      <div class="thumb" style="background:linear-gradient(135deg,${p.color}33,${p.color}11);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px">
+        <div style="font-size:3rem;font-weight:800;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,${p.color},${p.color}88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transform:rotate(-${tilt}deg);opacity:.8">${p.icon}</div>
+      </div>
+      <div class="tag" style="font-family:'Space Grotesk',sans-serif;font-weight:700;background:${p.color}22;border-color:${p.color}44;color:${p.color}">Live</div>
+      <div class="info">
+        <h4>${p.title}</h4>
+        <p>${p.desc}</p>
+        <div class="tech">${p.tags.map(t=>`<span>${t}</span>`).join('')}</div>
+      </div>`;
+  } else {
+    const c=colors[(i-projects.length)%colors.length];
+    item.innerHTML=`
+      <div class="thumb" style="background:linear-gradient(135deg,${c}33,${colors[(i-projects.length+1)%colors.length]}22);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px">
+        <div style="font-size:3rem;font-weight:800;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,${c},${colors[(i-projects.length+1)%colors.length]});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transform:rotate(-${tilt}deg);opacity:.8">CS</div>
+        <div style="font-size:1.6rem;opacity:.2">✦</div>
+      </div>
+      <div class="tag" style="font-family:'Space Grotesk',sans-serif;font-weight:700;background:${c}22;border-color:${c}44;color:${c}">Coming Soon</div>
+      <div class="info" style="align-items:center;justify-content:center;text-align:center;background:linear-gradient(to top,rgba(0,0,0,.95) 20%,rgba(0,0,0,.3) 70%)">
+        <h4 style="font-size:1.4rem;font-family:'Space Grotesk',sans-serif;transform:rotate(-2deg)">✦ Coming Soon ✦</h4>
+        <p style="font-size:.85rem;transform:rotate(1deg)">Something exciting is brewing</p>
+      </div>`;
+  }
   pfoGrid.appendChild(item);
   observeReveal(item);
 }
