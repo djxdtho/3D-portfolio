@@ -1212,8 +1212,8 @@ for(let i=0;i<n;i++){
 function drawConstellations(ctx,w,h){
   for(let i=0;i<constStars.length;i++){
     const s=constStars[i];
-    s.cx+=(s.tx-s.cx)*.006;
-    s.cy+=(s.ty-s.cy)*.006;
+    s.cx+=(s.tx-s.cx)*.0054;
+    s.cy+=(s.ty-s.cy)*.0054;
     if(Math.abs(s.cx-s.tx)<3&&Math.abs(s.cy-s.ty)<3&&Math.random()<.008){s.tx=Math.random()*w;s.ty=Math.random()*h;}
     s.twinkle+=s.speed;
     const glow=Math.sin(s.twinkle)*.5+.5;
