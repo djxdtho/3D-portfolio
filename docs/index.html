@@ -1262,7 +1262,7 @@ function drawConstellations(ctx,w,h){
   const explEase=1-Math.pow(1-explProg,2);
   let spd=0,size=1;
   if(cPhase==='scatter'){spd=0;size=0;}
-  else if(cPhase==='form'){spd=.002*formEase;size=.2+formEase*.8;}
+  else if(cPhase==='form'){spd=.002*formEase;size=formEase;}
   else if(cPhase==='orbit'){spd=.006+accel*.044;size=1+accel*.7;}
   else if(cPhase==='explode'){spd=.05*(1-explEase);size=1.7-explEase*.6;}
   else {spd=.006;size=1;}
@@ -1293,8 +1293,8 @@ function drawConstellations(ctx,w,h){
 
     if(cPhase==='scatter'){
       const t=1-Math.pow(1-scatProg,3);
-      s.cx=s.sx*(1-t)+(cx+s.x3*baseR)*t;
-      s.cy=s.sy*(1-t)+(cy+s.y3*baseR)*t;
+      s.cx=s.sx*(1-t)+cx*t;
+      s.cy=s.sy*(1-t)+cy*t;
     } else if(cPhase==='explode'){
       s.cx=rx+(s.ex-rx)*explEase;
       s.cy=ry+(s.ey-ry)*explEase;
