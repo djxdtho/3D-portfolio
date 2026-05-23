@@ -203,7 +203,6 @@ nav::before{
   opacity:0;transition:opacity .6s;z-index:-1;filter:blur(6px);
 }
 nav:hover::before{opacity:.35}
-nav.nav-hidden-desktop{top:-100px}
 @supports (-webkit-touch-callout:none){
   nav{background:rgba(20,20,20,0.82);backdrop-filter:blur(44px) saturate(1.8);-webkit-backdrop-filter:blur(44px) saturate(1.8);border-color:rgba(255,255,255,.06)}
   @media(max-width:768px){.nav-wrap nav{background:rgba(14,14,14,.95)}}
@@ -815,7 +814,6 @@ footer p{font-size:.78rem;color:var(--text-muted)}
   html,body{overflow-x:hidden;width:100%}
   .nav-wrap{top:10px;width:calc(100% - 12px)}
   nav{padding:0 12px;height:52px;border-radius:26px}
-  nav.nav-hidden-desktop{top:-70px}
   nav .logo{font-size:.8rem}
   .menu-toggle{width:36px;height:36px}
   .menu-toggle span{width:16px;height:1.5px}
