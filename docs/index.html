@@ -1321,21 +1321,22 @@ function drawConstellations(ctx,w,h){
     ctx.fill();
   }
 
-  // Connections (skip every other for perf)
-  for(let i=0;i<constStars.length;i+=2){
-    for(let j=i+2;j<constStars.length;j+=2){
+  // Connections — single path batch
+  const connDist=phase==='explode'||phase==='reform'?250:140;
+  ctx.beginPath();
+  for(let i=0;i<constStars.length;i++){
+    for(let j=i+1;j<constStars.length;j++){
       const dx=constStars[i].cx-constStars[j].cx;
       const dy=constStars[i].cy-constStars[j].cy;
       const dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<100){
-        const ca=.04*(1-dist/100);
-        ctx.beginPath();ctx.moveTo(constStars[i].cx,constStars[i].cy);
+      if(dist<connDist){
+        ctx.moveTo(constStars[i].cx,constStars[i].cy);
         ctx.lineTo(constStars[j].cx,constStars[j].cy);
-        ctx.strokeStyle=`rgba(255,255,255,${ca})`;
-        ctx.lineWidth=.4;ctx.stroke();
       }
     }
   }
+  ctx.strokeStyle='rgba(255,255,255,.035)';
+  ctx.lineWidth=.4;ctx.stroke();
 }
 
 let rafId;
@@ -1347,15 +1348,14 @@ function aBg(){
   bctx.fillStyle=g;bctx.fillRect(0,0,bgCanvas.width,bgCanvas.height);
   drawConstellations(bctx,bgCanvas.width,bgCanvas.height);
   p.forEach(pt=>{pt.u();pt.d()});
+  bctx.beginPath();
   for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){
     const dx=p[i].x-p[j].x,dy=p[i].y-p[j].y,dist=Math.sqrt(dx*dx+dy*dy);
     if(dist<120){
-      const opacity=.04*(1-dist/120);
-      bctx.beginPath();bctx.moveTo(p[i].x,p[i].y);bctx.lineTo(p[j].x,p[j].y);
-      bctx.strokeStyle=`rgba(255,255,255,${opacity})`;
-      bctx.lineWidth=.4;bctx.stroke();
+      bctx.moveTo(p[i].x,p[i].y);bctx.lineTo(p[j].x,p[j].y);
     }
   }
+  bctx.strokeStyle='rgba(255,255,255,.03)';bctx.lineWidth=.4;bctx.stroke();
   requestAnimationFrame(aBg);
 }
 aBg();
