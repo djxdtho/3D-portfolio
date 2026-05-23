@@ -1238,7 +1238,7 @@ function drawConstellations(ctx,w,h){
     if(phaseT>=1){phaseT=0;phase='converge';}
     break;
   case 'converge':
-    phaseT+=1/100;
+    phaseT+=1/360;
     if(phaseT>=1){phaseT=1;phase='orbit';}
     break;
   case 'orbit':
@@ -1260,7 +1260,7 @@ function drawConstellations(ctx,w,h){
     convergeT=easeIO(phaseT);
     rotSpd=convergeT*.004;
     size=.3+convergeT*.7;
-    showLines=convergeT>.3;
+    showLines=convergeT>.5;
   } else if(phase==='orbit'){
     const t=easeIO(phaseT);
     rotSpd=.008+t*.045;
