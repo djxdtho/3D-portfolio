@@ -429,7 +429,7 @@ section{
 .skill-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--grad-color),var(--grad-color2));opacity:0;transition:opacity .4s}
 .skill-card:hover::before{opacity:1}
 .skill-card:hover{transform:translateY(-5px) scale(1.03);border-color:var(--grad-1);box-shadow:0 8px 40px rgba(0,212,255,.1)}
-.glass-card{position:relative;overflow:hidden}
+.glass-card{position:relative}
 .skill-card .icon{font-size:1.6rem;margin-bottom:6px;position:relative;z-index:1;display:inline-block;transition:transform .3s}
 .skill-card:hover .icon{animation:iconPop .4s cubic-bezier(.68,-.55,.27,1.55) forwards}
 .skill-card:nth-child(1):hover .icon{animation:iconSpin .6s ease forwards}
@@ -546,10 +546,11 @@ section{
 }
 .pricing-card.popular:hover{transform:scale(1.04) translateY(-8px)}
 .pricing-card.popular::before{
-  content:'★ Most Popular';position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-  padding:5px 20px;border-radius:20px;
+  content:'★ Most Popular';position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  padding:5px 20px;border-radius:20px;z-index:5;
   background:linear-gradient(135deg,var(--grad-1),var(--grad-2));
   font-size:.68rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;
+  box-shadow:0 4px 15px rgba(0,0,0,.4);
 }
 .pricing-tier{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted)}
 .pricing-price{
