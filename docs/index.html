@@ -251,23 +251,34 @@ nav .logo{
   }
   .nav-backdrop.show{opacity:1;visibility:visible;pointer-events:auto}
   .nav-links{
-    position:fixed;top:76px;left:16px;right:16px;bottom:16px;z-index:1002;
-    background:#0e0e0e;border:1px solid rgba(255,255,255,.08);border-radius:24px;
+    position:fixed;top:130px;left:16px;right:16px;bottom:16px;z-index:1002;
+    background:#0e0e0e;border:1px solid rgba(255,255,255,.06);border-radius:28px;
     flex-direction:column;align-items:center;justify-content:center;
-    gap:20px;opacity:0;visibility:hidden;transition:all .45s cubic-bezier(.34,1.56,.64,1);transform:scale(.95) translateY(-16px);
-    box-shadow:0 24px 80px rgba(0,0,0,.6);
-    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-    padding:48px 20px 32px;
+    gap:14px;opacity:0;visibility:hidden;transition:all .45s cubic-bezier(.34,1.56,.64,1);transform:scale(.93) translateY(-20px);
+    box-shadow:0 32px 100px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    padding:52px 24px 36px;
   }
   .nav-links::before{
     content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
-    width:60%;height:2px;
+    width:50%;height:2px;
     background:linear-gradient(90deg,transparent,var(--grad-1),var(--grad-2),transparent);
-    border-radius:2px;opacity:.6;
+    border-radius:2px;opacity:.5;
   }
   .nav-links.open{opacity:1;visibility:visible;transform:scale(1) translateY(0)}
-   .nav-links a{font-size:1.1rem;padding:12px 28px;border-radius:40px;transition:all .3s cubic-bezier(.22,1,.36,1);position:relative}
-   .nav-links a:hover{background:linear-gradient(135deg,var(--grad-color),var(--grad-color2));color:#fff}
+   .nav-links a{
+     font-size:1.05rem;padding:14px 32px;border-radius:40px;
+     transition:all .3s cubic-bezier(.22,1,.36,1);position:relative;
+     background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);
+     width:100%;max-width:280px;text-align:center;letter-spacing:.5px;
+   }
+   .nav-links a::before{
+     content:'';position:absolute;inset:-1px;border-radius:41px;
+     background:linear-gradient(135deg,var(--grad-1),var(--grad-2));
+     opacity:0;transition:opacity .35s;z-index:-1;
+   }
+   .nav-links a:hover::before{opacity:.3}
+   .nav-links a:hover{background:rgba(255,255,255,.04);border-color:rgba(0,212,255,.15);color:#fff;transform:scale(1.04)}
    .menu-toggle{display:flex;z-index:1003}
 }
 
@@ -908,13 +919,13 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 </nav>
 <div class="nav-backdrop" id="navBackdrop"></div>
 <ul class="nav-links" id="navLinks">
-  <li><a href="#hero">Home</a></li>
-  <li><a href="#about">About</a></li>
-  <li><a href="#skills">Skills</a></li>
-  <li><a href="#services">Services</a></li>
-  <li><a href="#pricing">Pricing</a></li>
-  <li><a href="#portfolio">Work</a></li>
-  <li><a href="#contact">Contact</a></li>
+  <li><a href="#hero">⌂ Home</a></li>
+  <li><a href="#about">◈ About</a></li>
+  <li><a href="#skills">⚙ Skills</a></li>
+  <li><a href="#services">✦ Services</a></li>
+  <li><a href="#pricing">₿ Pricing</a></li>
+  <li><a href="#portfolio">▣ Work</a></li>
+  <li><a href="#contact">✉ Contact</a></li>
 </ul>
 </div>
 
