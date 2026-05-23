@@ -1209,8 +1209,8 @@ for(let i=0;i<30;i++){
   constStars.push({
     x:Math.random()*window.innerWidth,
     y:Math.random()*window.innerHeight,
-    s:Math.random()*1.2+.3,
-    o:Math.random()*.06+.02,
+    s:Math.random()*2+.5,
+    o:Math.random()*.15+.08,
     twinkle:Math.random()*Math.PI*2
   });
 }
@@ -1222,16 +1222,16 @@ function drawConstellations(ctx,w,h){
     const glow=Math.sin(s.twinkle)*.5+.5;
     const alpha=s.o*(.7+glow*.3);
     ctx.beginPath();ctx.arc(s.x,s.y,s.s,0,Math.PI*2);
-    const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.s*2);
+    const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.s*4);
     g.addColorStop(0,`rgba(255,255,255,${alpha})`);
     g.addColorStop(1,'transparent');
     ctx.fillStyle=g;ctx.fill();
     for(let j=i+1;j<constStars.length;j++){
       const dx=s.x-constStars[j].x,dy=s.y-constStars[j].y,dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<150&&dist>30){
+      if(dist<200){
         ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(constStars[j].x,constStars[j].y);
-        ctx.strokeStyle=`rgba(255,255,255,${.015*(1-dist/150)})`;
-        ctx.lineWidth=.2;ctx.stroke();
+        ctx.strokeStyle=`rgba(255,255,255,${.06*(1-dist/200)})`;
+        ctx.lineWidth=.5;ctx.stroke();
       }
     }
   }
