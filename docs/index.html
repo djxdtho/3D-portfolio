@@ -1197,8 +1197,7 @@ class Pt{
   }
 }
 for(let i=0;i<50;i++)p.push(new Pt());
-bgCanvas.addEventListener('mousemove',e=>{cancelAnimationFrame(rafId);rafId=requestAnimationFrame(()=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true;constMouse.x=e.clientX;constMouse.y=e.clientY})},{passive:true});
-bgCanvas.addEventListener('mouseleave',()=>mIn=false,{passive:true});
+document.addEventListener('mousemove',e=>{mP.x=e.clientX;mP.y=e.clientY;mIn=true;constMouse.x=e.clientX;constMouse.y=e.clientY},{passive:true});
 
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(rs,200)},{passive:true});
