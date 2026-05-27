@@ -17,6 +17,7 @@
 /* ═══════════════════════════════════════════════════
    ROOT & RESET
    ═══════════════════════════════════════════════════ */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 :root {
   --bg: #0e0e0e;
   --surface: #1a1a1a;
@@ -648,7 +649,7 @@ section{
   border-bottom:1px solid rgba(255,255,255,.04);
   display:flex;align-items:center;gap:10px;
 }
-.pricing-features li::before{content:'✦';color:var(--grad-1);font-size:.65rem}
+.pricing-features li::before{content:'';display:inline-block;width:14px;height:14px;margin-right:8px;background:var(--grad-1);mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'/%3E%3C/svg%3E") center/contain no-repeat;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'/%3E%3C/svg%3E") center/contain no-repeat;}
 .pricing-card .btn{width:100%;justify-content:center}
 @media(max-width:900px){.pricing-grid{grid-template-columns:1fr;gap:24px}.pricing-card.popular{transform:none}.pricing-card.popular:hover{transform:translateY(-8px)}}
 
@@ -925,7 +926,7 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 <!-- ═══ HERO ═══ -->
 <section id="hero">
   <div class="section-inner hero-content">
-    <div class="hero-badge">✦ Self-taught · Designer · Developer</div>
+    <div class="hero-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle;margin-right:6px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Self-taught · Designer · Developer</div>
     <h1 class="hero-title">
       <span class="line">Crafting</span>
       <span class="line highlight">Digital</span>
@@ -944,8 +945,8 @@ footer p{font-size:.78rem;color:var(--text-muted)}
 <!-- ═══ MARQUEE ═══ -->
 <div class="marquee-wrap">
   <div class="marquee">
-    <span>✦ <em>React</em> ✦ <em>TypeScript</em> ✦ <em>UI/UX Design</em> ✦ <em>WebGL</em> ✦ <em>Figma</em> ✦ <em>Tailwind CSS</em> ✦ <em>Three.js</em> ✦ <em>Node.js</em> ✦ <em>Supabase</em> ✦ <em>Firebase</em> ✦</span>
-    <span>✦ <em>React</em> ✦ <em>TypeScript</em> ✦ <em>UI/UX Design</em> ✦ <em>WebGL</em> ✦ <em>Figma</em> ✦ <em>Tailwind CSS</em> ✦ <em>Three.js</em> ✦ <em>Node.js</em> ✦ <em>Supabase</em> ✦ <em>Firebase</em> ✦</span>
+    <span><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>React</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>TypeScript</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>UI/UX Design</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>WebGL</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Figma</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Tailwind CSS</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Three.js</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Node.js</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Supabase</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Firebase</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+    <span><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>React</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>TypeScript</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>UI/UX Design</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>WebGL</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Figma</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Tailwind CSS</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Three.js</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Node.js</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Supabase</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <em>Firebase</em> <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
   </div>
 </div>
 
@@ -1158,28 +1159,28 @@ footer p{font-size:.78rem;color:var(--text-muted)}
     <div class="contact-wrap">
       <div class="contact-info">
         <div class="contact-item reveal-left">
-          <div class="ci-icon">✉</div>
+          <div class="ci-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg></div>
           <div>
             <div class="ci-label">Email</div>
             <div class="ci-text">AAelementsweb@gmail.com</div>
           </div>
         </div>
         <div class="contact-item reveal-left">
-          <div class="ci-icon">◎</div>
+          <div class="ci-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
           <div>
             <div class="ci-label">Location</div>
             <div class="ci-text">Nigeria</div>
           </div>
         </div>
         <div class="contact-item reveal-left">
-          <div class="ci-icon">◆</div>
+          <div class="ci-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
           <div>
             <div class="ci-label">Status</div>
             <div class="ci-text">Available for freelance & collaborations</div>
           </div>
         </div>
         <div class="contact-item reveal-left">
-          <div class="ci-icon">◉</div>
+          <div class="ci-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
           <div>
             <div class="ci-label">Response Time</div>
             <div class="ci-text">Usually within 24 hours</div>
@@ -1187,16 +1188,20 @@ footer p{font-size:.78rem;color:var(--text-muted)}
         </div>
       </div>
       <form class="contact-form reveal-right" id="contactForm">
-        <input type="text" name="from_name" placeholder="Your Name" required>
-        <input type="email" name="from_email" placeholder="Your Email" required>
-        <select name="project_type" required>
+        <label for="from_name" class="sr-only">Your Name</label>
+        <input type="text" id="from_name" name="from_name" placeholder="Your Name" required>
+        <label for="from_email" class="sr-only">Your Email</label>
+        <input type="email" id="from_email" name="from_email" placeholder="Your Email" required>
+        <label for="project_type" class="sr-only">Project Package</label>
+        <select id="project_type" name="project_type" required>
           <option value="" disabled selected>Select a package</option>
           <option>Starter Website — $120 (~₦192,000)</option>
           <option>Professional Website — $300 (~₦480,000) ★ Most Popular</option>
           <option>Premium Project — $900+ (~₦1,440,000+)</option>
           <option>Custom / Not Sure Yet</option>
         </select>
-        <textarea name="message" rows="4" placeholder="Tell me about your project — what do you need, what's your vision, what's your budget?" required></textarea>
+        <label for="message" class="sr-only">Message</label>
+        <textarea id="message" name="message" rows="4" placeholder="Tell me about your project — what do you need, what's your vision, what's your budget?" required></textarea>
         <button class="btn" type="submit"><span>Send Message →</span></button>
       </form>
     </div>
@@ -1458,13 +1463,33 @@ document.addEventListener('scroll',()=>{
 },{passive:true});
 
 // ─── SKILLS ───
+const skillIcons={
+  React:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(0 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-60 12 12)"/></svg>',
+  HTMLCSS:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 3 7 3 8 11 16 11 17 3 20 3"/><polyline points="8 13 16 13 15 19 12 21 9 19"/></svg>',
+  JavaScript:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M10 13.5A1.5 1.5 0 0 0 11.5 15H13a1.5 1.5 0 0 0 0-3h-2a1.5 1.5 0 0 1 0-3h1.5a1.5 1.5 0 0 1 1.5 1.5"/><path d="M14 9v6"/></svg>',
+  TypeScript:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M12 9v6"/><path d="M16 15h-4"/><path d="M18 13v2"/></svg>',
+  Tailwind:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 0-6 2-6 4s2 3 3 3c-1 0-3 1-3 3 0 2 2 4 6 4 4 0 6-2 6-4s-2-3-3-3c1 0 3-1 3-3 0-2-2-4-6-4z"/></svg>',
+  NodeJS:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10l10 5 10-5V7L12 2z"/><path d="M2 7l10 5 10-5"/><path d="M12 22V12"/></svg>',
+  Git:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M8.5 8l3 7"/><path d="M15.5 8l-3 7"/><path d="M18 7l-3 2"/><path d="M6 7l3 2"/></svg>',
+  Figma:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="3" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="12" rx="1"/><circle cx="18" cy="12" r="3"/></svg>',
+  WebGL:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M12 22V12"/><path d="M3.3 7.7l8.7 4.3 8.7-4.3"/></svg>',
+  ThreeJS:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/><polygon points="12 2 22 7 12 12 2 7"/><polyline points="2 7 12 12 22 7"/><polyline points="12 12 12 22"/></svg>',
+  UIUX:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+  Responsive:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="6" y="6" width="12" height="8" rx="1"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="10" y1="20" x2="14" y2="20"/></svg>',
+  Supabase:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+  Firebase:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L8 4l4 8 4-8 4 16z"/><path d="M12 12l-3 8h6z"/></svg>',
+  NextJS:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16.5 8.5L12 14"/><path d="M12 14h4"/><path d="M8.5 8.5v7"/></svg>',
+  GSAP:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16"/></svg>',
+  SQL:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>',
+  RESTAPIs:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><path d="M5 7v4l7 8 7-8V7"/><path d="M5 11h14"/></svg>',
+};
 const skills=[
-  {icon:'⚛',name:'React',lvl:85},{icon:'▣',name:'HTML/CSS',lvl:95},{icon:'✦',name:'JavaScript',lvl:88},
-  {icon:'◎',name:'TypeScript',lvl:75},{icon:'◆',name:'Tailwind',lvl:85},{icon:'◈',name:'Node.js',lvl:70},
-  {icon:'▦',name:'Git',lvl:80},{icon:'◇',name:'Figma',lvl:78},{icon:'○',name:'WebGL',lvl:65},
-  {icon:'▤',name:'Three.js',lvl:62},{icon:'●',name:'UI/UX',lvl:85},{icon:'◉',name:'Responsive',lvl:92},
-  {icon:'▣',name:'Supabase',lvl:78},{icon:'✦',name:'Firebase',lvl:72},{icon:'◆',name:'Next.js',lvl:60},
-  {icon:'◎',name:'GSAP',lvl:68},{icon:'◈',name:'SQL',lvl:55},{icon:'▣',name:'REST APIs',lvl:74},
+  {icon:skillIcons.React,name:'React',lvl:85},{icon:skillIcons.HTMLCSS,name:'HTML/CSS',lvl:95},{icon:skillIcons.JavaScript,name:'JavaScript',lvl:88},
+  {icon:skillIcons.TypeScript,name:'TypeScript',lvl:75},{icon:skillIcons.Tailwind,name:'Tailwind',lvl:85},{icon:skillIcons.NodeJS,name:'Node.js',lvl:70},
+  {icon:skillIcons.Git,name:'Git',lvl:80},{icon:skillIcons.Figma,name:'Figma',lvl:78},{icon:skillIcons.WebGL,name:'WebGL',lvl:65},
+  {icon:skillIcons.ThreeJS,name:'Three.js',lvl:62},{icon:skillIcons.UIUX,name:'UI/UX',lvl:85},{icon:skillIcons.Responsive,name:'Responsive',lvl:92},
+  {icon:skillIcons.Supabase,name:'Supabase',lvl:78},{icon:skillIcons.Firebase,name:'Firebase',lvl:72},{icon:skillIcons.NextJS,name:'Next.js',lvl:60},
+  {icon:skillIcons.GSAP,name:'GSAP',lvl:68},{icon:skillIcons.SQL,name:'SQL',lvl:55},{icon:skillIcons.RESTAPIs,name:'REST APIs',lvl:74},
 ];
 const sGrid=document.getElementById('skillsGrid');
 skills.forEach(s=>{
@@ -1480,8 +1505,8 @@ skills.forEach(s=>{
 const services=[
   {icon:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',title:'Web Design',desc:'Pixel-perfect interfaces with a sharp focus on user experience, visual hierarchy, and storytelling that connects.'},
   {icon:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',title:'Front-End Development',desc:'Clean, performant code using React, TypeScript, Tailwind, and modern web standards. No bloat. No shortcuts.'},
-  {icon:'◆',title:'UI/UX Design',desc:'Intuitive, research-driven interfaces — from wireframes to high-fidelity prototypes that users love.'},
-  {icon:'◎',title:'Interactive Experiences',desc:'Immersive web experiences with smooth animations, micro-interactions, 3D elements, and scroll-driven storytelling.'},
+  {icon:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',title:'UI/UX Design',desc:'Intuitive, research-driven interfaces — from wireframes to high-fidelity prototypes that users love.'},
+  {icon:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16"/></svg>',title:'Interactive Experiences',desc:'Immersive web experiences with smooth animations, micro-interactions, 3D elements, and scroll-driven storytelling.'},
 ];
 const svGrid=document.getElementById('servicesGrid');
 services.forEach(s=>{
@@ -1517,16 +1542,16 @@ tiers.forEach(t=>{
 // ─── PORTFOLIO ───
 const pfoGrid=document.getElementById('portfolioGrid');
 const projects=[
-  {title:'Calculator',desc:'A sleek glass-morphism calculator with basic arithmetic, keyboard support, and responsive design.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/calculator/',icon:'<img src="https://djxdtho.github.io/calculator/favicon.svg" alt="" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
-  {title:'Weather App',desc:'A clean weather app with city search, current conditions, humidity, wind speed, and feels-like temperature — powered by OpenWeatherMap.',tags:['HTML','CSS','JS','API'],url:'https://djxdtho.github.io/weather-app/',icon:'<img src="projects/weather.svg" alt="" style="width:48px;height:48px;display:block">',color:'#38bdf8'},
-  {title:'FitTrack',desc:'A fitness app with AI coach, workout tracking, analytics, and exercise library — plus a companion website to showcase features and enable downloads.',tags:['Swift','SwiftUI','Firebase'],url:'https://djxdtho.github.io/3D-portfolio/fittrack/',icon:'<img src="projects/fittrack.svg" alt="" style="width:48px;height:48px;display:block">',color:'#22c55e'},
-  {title:'Zari Restaurant',desc:'A modern restaurant website with menu showcase, gallery, contact info, and reservation booking — built for a clean, appetizing brand presence.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/Zari-Restaurant/',icon:'<img src="projects/zari.svg" alt="" style="width:48px;height:48px;display:block">',color:'#f59e0b'},
-  {title:'Notes App',desc:'A full-featured notes app with user authentication and cloud sync — sign up, write notes, and access them from any device.',tags:['HTML','CSS','JS','Firebase'],url:'https://djxdtho.github.io/notes-app/',icon:'<img src="projects/notes.svg" alt="" style="width:48px;height:48px;display:block">',color:'#a855f7'},
-  {title:'Todo List',desc:'A full-featured todo app with priorities, due dates with overdue warnings, search, filters (All/Active/Done/Today), and persistent localStorage.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/todo-list/',icon:'<img src="projects/todo.svg" alt="" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
-  {title:'Digital Clock',desc:'A calming, futuristic digital clock experience with 10 themes, particles, 12/24h modes, fullscreen, PWA support, and smooth animations.',tags:['HTML','CSS','JS','PWA'],url:'https://djxdtho.github.io/digital-clock/',icon:'<img src="projects/clock.svg" alt="" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
-  {title:'Vault',desc:'A clean, modern password generator & manager — generate insane passwords, check strength, store in an encrypted vault, autofill, and monitor your security score.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/password-generator/',icon:'<img src="projects/vault.svg" alt="" style="width:48px;height:48px;display:block">',color:'#8b5cf6'},
-  {title:'echo — AI Chat',desc:'A sleek, cinematic AI chat UI with streaming responses, markdown rendering, sidebar conversations, theme support, and Gemini API integration.',tags:['HTML','CSS','JS','API'],url:'https://djxdtho.github.io/echo-ai-chat/',icon:'<img src="projects/echo.svg" alt="" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
-  {title:'CineVault',desc:'A cinematic movie discovery app — search films, browse genres, rate movies, and curate a personal watchlist. Powered by OMDb.',tags:['HTML','CSS','JS','API'],url:'https://djxdtho.github.io/cinevault/',icon:'<img src="projects/cinevault.svg" alt="" style="width:48px;height:48px;display:block">',color:'#f5c518'},
+  {title:'Calculator',desc:'A sleek glass-morphism calculator with basic arithmetic, keyboard support, and responsive design.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/calculator/',icon:'<img src="https://djxdtho.github.io/calculator/favicon.svg" alt="Calculator app icon" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
+  {title:'Weather App',desc:'A clean weather app with city search, current conditions, humidity, wind speed, and feels-like temperature — powered by OpenWeatherMap.',tags:['HTML','CSS','JS','API'],url:'https://djxdtho.github.io/weather-app/',icon:'<img src="projects/weather.svg" alt="Weather app icon" style="width:48px;height:48px;display:block">',color:'#38bdf8'},
+  {title:'FitTrack',desc:'A fitness app with AI coach, workout tracking, analytics, and exercise library — plus a companion website to showcase features and enable downloads.',tags:['Swift','SwiftUI','Firebase'],url:'https://djxdtho.github.io/3D-portfolio/fittrack/',icon:'<img src="projects/fittrack.svg" alt="FitTrack fitness app icon" style="width:48px;height:48px;display:block">',color:'#22c55e'},
+  {title:'Zari Restaurant',desc:'A modern restaurant website with menu showcase, gallery, contact info, and reservation booking — built for a clean, appetizing brand presence.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/Zari-Restaurant/',icon:'<img src="projects/zari.svg" alt="Zari Restaurant icon" style="width:48px;height:48px;display:block">',color:'#f59e0b'},
+  {title:'Notes App',desc:'A full-featured notes app with user authentication and cloud sync — sign up, write notes, and access them from any device.',tags:['HTML','CSS','JS','Firebase'],url:'https://djxdtho.github.io/notes-app/',icon:'<img src="projects/notes.svg" alt="Notes app icon" style="width:48px;height:48px;display:block">',color:'#a855f7'},
+  {title:'Todo List',desc:'A full-featured todo app with priorities, due dates with overdue warnings, search, filters (All/Active/Done/Today), and persistent localStorage.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/todo-list/',icon:'<img src="projects/todo.svg" alt="Todo list app icon" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
+  {title:'Digital Clock',desc:'A calming, futuristic digital clock experience with 10 themes, particles, 12/24h modes, fullscreen, PWA support, and smooth animations.',tags:['HTML','CSS','JS','PWA'],url:'https://djxdtho.github.io/digital-clock/',icon:'<img src="projects/clock.svg" alt="Digital clock app icon" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
+  {title:'Vault',desc:'A clean, modern password generator & manager — generate insane passwords, check strength, store in an encrypted vault, autofill, and monitor your security score.',tags:['HTML','CSS','JS'],url:'https://djxdtho.github.io/password-generator/',icon:'<img src="projects/vault.svg" alt="Vault password manager icon" style="width:48px;height:48px;display:block">',color:'#8b5cf6'},
+  {title:'echo — AI Chat',desc:'A sleek, cinematic AI chat UI with streaming responses, markdown rendering, sidebar conversations, theme support, and Gemini API integration.',tags:['HTML','CSS','JS','API'],url:'https://djxdtho.github.io/echo-ai-chat/',icon:'<img src="projects/echo.svg" alt="echo AI chat app icon" style="width:48px;height:48px;display:block">',color:'#00d4ff'},
+  {title:'CineVault',desc:'A cinematic movie discovery app — search films, browse genres, rate movies, and curate a personal watchlist. Powered by OMDb.',tags:['HTML','CSS','JS','API'],url:'https://djxdtho.github.io/cinevault/',icon:'<img src="projects/cinevault.svg" alt="CineVault movie app icon" style="width:48px;height:48px;display:block">',color:'#f5c518'},
 ];
 for(let i=0;i<projects.length;i++){
   const item=document.createElement('div');item.className='portfolio-item';
